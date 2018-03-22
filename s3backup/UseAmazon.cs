@@ -49,7 +49,9 @@ namespace S3Backup
 
         public async Task UploadObjectToBucket(FileInfo file, string localPath, int partSize)
         {
-            var objectKey = file.FullName.Remove(0, localPath.Length + 1).Replace("\\", "/");
+            var objectKey = file.FullName
+                .Remove(0, localPath.Length + 1)
+                .Replace('\\', '/');
             if (file.Length <= partSize)
             {
                 var putObjectRequest = new PutObjectRequest
