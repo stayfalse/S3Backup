@@ -36,7 +36,7 @@ namespace S3Backup
             }
         }
 
-        public async Task<IEnumerable<IS3Object>> GetObjectsList(string prefix = "")
+        public async Task<IEnumerable<IS3Object>> GetObjectsList(string prefix)
         {
             var list = new List<IS3Object>();
             foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
