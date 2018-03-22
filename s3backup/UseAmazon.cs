@@ -27,9 +27,9 @@ namespace S3Backup
 
             set
             {
-                if (!CheckBucketExistence(value).GetAwaiter().GetResult())
+                if (!CheckBucketExistence(value).ConfigureAwait(false).GetAwaiter().GetResult())
                 {
-                    PutBucketToAmazon(value).GetAwaiter().GetResult();
+                    PutBucketToAmazon(value).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
 
                 _bucketName = value;
