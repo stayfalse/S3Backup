@@ -150,7 +150,7 @@ namespace S3Backup
             var md5 = MD5.Create();
             var hashLength = md5.HashSize / 8;
             var n = ((file.Length / partSize) * hashLength) + ((file.Length % partSize != 0) ? hashLength : 0);
-            byte[] sum = new byte[n];
+            var sum = new byte[n];
             var a = (file.Length > partSize) ? partSize : (int)file.Length;
             while (sumIndex < sum.Length)
             {

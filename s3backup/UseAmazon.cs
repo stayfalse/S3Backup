@@ -62,7 +62,7 @@ namespace S3Backup
                 };
                 try
                 {
-                    PutObjectResponse putObjectResponse = await Client.PutObjectAsync(putObjectRequest).ConfigureAwait(false);
+                    var putObjectResponse = await Client.PutObjectAsync(putObjectRequest).ConfigureAwait(false);
                 }
                 catch (Exception exception)
                 {
@@ -78,11 +78,11 @@ namespace S3Backup
                 };
 
                 var multipartUploadResponse = await Client.InitiateMultipartUploadAsync(multipartUploadRequest).ConfigureAwait(false);
-                int a = (file.Length > partSize) ? partSize : (int)file.Length;
+                var a = (file.Length > partSize) ? partSize : (int)file.Length;
                 try
                 {
                     var list = new List<Task<UploadPartResponse>>();
-                    for (int i = 0; partSize * i < file.Length; i++)
+                    for (var i = 0; partSize * i < file.Length; i++)
                     {
                         var upload = new UploadPartRequest()
                         {
