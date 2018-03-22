@@ -9,7 +9,7 @@ using Amazon.S3.Util;
 
 namespace S3Backup
 {
-    public sealed class UseAmazon : IAmazonFunctions
+    internal sealed class UseAmazon : IAmazonFunctions
     {
         private string _bucketName;
 
