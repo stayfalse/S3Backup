@@ -29,7 +29,7 @@ namespace S3Backup
             {
                 if (!CheckBucketExistence(value).GetAwaiter().GetResult())
                 {
-                    PutBacketToAmazon(value).GetAwaiter().GetResult();
+                    PutBucketToAmazon(value).GetAwaiter().GetResult();
                 }
 
                 _bucketName = value;
@@ -177,7 +177,7 @@ namespace S3Backup
             }
         }
 
-        private async Task PutBacketToAmazon(string bucket)
+        private async Task PutBucketToAmazon(string bucket)
         {
             var putRequest = new PutBucketRequest
             {
