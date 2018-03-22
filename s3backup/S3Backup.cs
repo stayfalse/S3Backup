@@ -118,7 +118,7 @@ namespace S3Backup
             return filesInfo;
         }
 
-        private static bool EqualETag(IS3Object s3Object, FileInfo fileInfo, int partSize)
+        private static bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo, int partSize)
         {
             if (string.Equals(s3Object.ETag, ComputeLocalETag(fileInfo, partSize), StringComparison.Ordinal))
             {
@@ -130,7 +130,7 @@ namespace S3Backup
             }
         }
 
-        private static bool EqualSize(IS3Object s3Object, FileInfo fileInfo)
+        private static bool EqualSize(S3ObjectInfo s3Object, FileInfo fileInfo)
         {
             if (fileInfo.Length == s3Object.Size)
             {

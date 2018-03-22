@@ -6,7 +6,7 @@ namespace S3Backup
 {
     public interface IAmazonFunctions
     {
-        Task<IEnumerable<IS3Object>> GetObjectsList(string prefix);
+        Task<IEnumerable<S3ObjectInfo>> GetObjectsList(string prefix);
 
         Task UploadObjectToBucket(FileInfo file, string localPath, int partSize);
 

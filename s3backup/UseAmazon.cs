@@ -36,12 +36,13 @@ namespace S3Backup
             }
         }
 
-        public async Task<IEnumerable<IS3Object>> GetObjectsList(string prefix)
+        public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(string prefix)
         {
-            var list = new List<IS3Object>();
+            var list = new List<S3ObjectInfo>();
             foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
             {
-                list.Add(new AmazonS3Object(obj));
+                var objectInfo = new S3ObjectInfo(obj.Key, obj.Size, obj.ETag, obj.LastModified);
+                list.Add(objectInfo);
             }
 
             return list.AsReadOnly();
