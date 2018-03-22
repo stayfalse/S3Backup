@@ -1,59 +1,50 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Threading;
+using System.IO;
 using System.Threading.Tasks;
+
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
 
 namespace S3Backup
 {
-    public class UseAmazon
+    public class UseAmazon : IAmazonFunctions
     {
-        private AmazonS3Client Client;
-        private string Bucket { get; set; }
+        private string _bucketName;
 
         public UseAmazon(string bucketName, ClientInformation config)
         {
-            try
-            {
-                var s3Config = new AmazonS3Config
-                {
-                    ServiceURL = config.ServiceUrl
-                };
-                Client = new AmazonS3Client(config.AccessKey, config.SecretKey, s3Config);
-            }
-            catch (Exception exception)
-            {
-                Log.PutError($"Exception occurred: {exception.Message}");
-            }
+            SetClient(config);
             Bucket = bucketName;
-            CheckBucketExistance().GetAwaiter().GetResult();
         }
 
-        private async Task CheckBucketExistance()
+        private AmazonS3Client Client { get; set; }
+
+        private string Bucket
         {
-            if (!await AmazonS3Util.DoesS3BucketExistAsync(Client, Bucket))
+            get => _bucketName;
+
+            set
             {
-                var putRequest = new PutBucketRequest
+                if (!CheckBucketExistance(value).GetAwaiter().GetResult())
                 {
-                    BucketName = Bucket
-                };
-                await Client.PutBucketAsync(putRequest).ConfigureAwait(false);
+                    PutBacketToAmazon(value).GetAwaiter().GetResult();
+                }
+
+                _bucketName = value;
             }
         }
 
-        public async Task<List<S3Object>> GetS3ObjectsList(string prefix = "")
+        public async Task<IEnumerable<IS3Object>> GetObjectsList(string prefix = "")
         {
-            var request = new ListObjectsRequest
+            var list = new List<IS3Object>();
+            foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
             {
-                BucketName = Bucket,
-                Prefix = prefix
-            };
+                list.Add(new AmazonS3Object(obj));
+            }
 
-            var objects = (await Client.ListObjectsAsync(request).ConfigureAwait(false)).S3Objects;
-            return objects;
+            return list.AsReadOnly();
         }
 
         public async Task UploadObjectToBucket(FileInfo file, string localPath, int partSize)
@@ -61,11 +52,11 @@ namespace S3Backup
             var objectKey = file.FullName.Remove(0, localPath.Length + 1).Replace("\\", "/");
             if (file.Length <= partSize)
             {
-                PutObjectRequest putObjectRequest = new PutObjectRequest
+                var putObjectRequest = new PutObjectRequest
                 {
                     BucketName = Bucket,
                     Key = objectKey,
-                    FilePath = file.FullName
+                    FilePath = file.FullName,
                 };
                 try
                 {
@@ -78,20 +69,20 @@ namespace S3Backup
             }
             else
             {
-                InitiateMultipartUploadRequest multipartUploadRequest = new InitiateMultipartUploadRequest()
+                var multipartUploadRequest = new InitiateMultipartUploadRequest()
                 {
                     BucketName = Bucket,
-                    Key = objectKey
+                    Key = objectKey,
                 };
 
                 var multipartUploadResponse = await Client.InitiateMultipartUploadAsync(multipartUploadRequest).ConfigureAwait(false);
                 int a = (file.Length > partSize) ? partSize : (int)file.Length;
                 try
-                { 
-                    List<Task<UploadPartResponse>> list = new List<Task<UploadPartResponse>>();
+                {
+                    var list = new List<Task<UploadPartResponse>>();
                     for (int i = 0; partSize * i < file.Length; i++)
                     {
-                        UploadPartRequest upload = new UploadPartRequest()
+                        var upload = new UploadPartRequest()
                         {
                             BucketName = Bucket,
                             Key = objectKey,
@@ -102,11 +93,15 @@ namespace S3Backup
                             FilePath = file.FullName,
                         };
                         if ((i + 1) * partSize > file.Length)
-                        { a = (int)file.Length % partSize; }
+                        {
+                            a = (int)file.Length % partSize;
+                        }
+
                         list.Add(Client.UploadPartAsync(upload));
                     }
+
                     var partResponses = Task.WhenAll(list);
-                    CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest
+                    var compRequest = new CompleteMultipartUploadRequest
                     {
                         BucketName = Bucket,
                         Key = objectKey,
@@ -118,67 +113,117 @@ namespace S3Backup
                 catch (Exception exception)
                 {
                     Log.PutError($"Exception occurred: {exception.Message}");
-                    AbortMultipartUploadRequest abortMPURequest = new AbortMultipartUploadRequest
+                    var abortMPURequest = new AbortMultipartUploadRequest
                     {
                         BucketName = Bucket,
                         Key = objectKey,
-                        UploadId = multipartUploadResponse.UploadId
+                        UploadId = multipartUploadResponse.UploadId,
                     };
                     await Client.AbortMultipartUploadAsync(abortMPURequest).ConfigureAwait(false);
                 }
             }
         }
 
-        public async Task DeleteObject(string objectKey)
+        public async Task DeleteObject(string key)
         {
             var deleteRequest = new DeleteObjectRequest
             {
                 BucketName = Bucket,
-                Key = objectKey
+                Key = key,
             };
             var deleteResponse = await Client.DeleteObjectAsync(deleteRequest).ConfigureAwait(false);
-            Log.PutOut($"{objectKey} deleted from bucket");
-        }
-
-        private async Task DeleteObjects(List<S3Object> objects) // does not work, "Acces denied" exeption
-        {
-            
-            CancellationTokenSource sourse = new CancellationTokenSource();
-            try
-            {
-                var deleteRequest = new DeleteObjectsRequest { BucketName = this.Bucket };
-                foreach (var obj in objects)
-                {
-                    deleteRequest.AddKey(obj.Key);
-                    Log.PutOut($"{obj.Key} added to keyversion List for delete objects");
-                }
-                var deleteResponse = await Client.DeleteObjectsAsync(deleteRequest, sourse.Token).ConfigureAwait(false);
-                Log.PutOut($"{objects.Capacity} objects deleted");
-            }
-            catch (DeleteObjectsException doe)
-            {
-                Log.PutError("Exception occurred: "+ doe.Message);
-                DeleteObjectsResponse errorResponse = doe.Response;
-
-                foreach (DeletedObject deletedObject in errorResponse.DeletedObjects)
-                {
-                    Log.PutError(" Deleted item " + deletedObject.Key);
-                }
-                foreach (DeleteError deleteError in errorResponse.DeleteErrors)
-                {
-                    Log.PutError(" Error deleting item " + deleteError.Key + " Code - " + deleteError.Code + " Message - " + deleteError.Message);
-                }
-            }
+            Log.PutOut($"{key} deleted from bucket");
         }
 
         public async Task Purge(string prefix)
         {
             var deleteTasks = new List<Task>();
-           foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
+            foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
             {
                 deleteTasks.Add(DeleteObject(obj.Key));
             }
-           await Task.WhenAll(deleteTasks);
+
+            await Task.WhenAll(deleteTasks).ConfigureAwait(false);
+        }
+
+        private void SetClient(ClientInformation config)
+        {
+            try
+            {
+                var s3Config = new AmazonS3Config
+                {
+                    ServiceURL = config.ServiceUrl,
+                };
+                Client = new AmazonS3Client(config.AccessKey, config.SecretKey, s3Config);
+            }
+            catch (Exception exception)
+            {
+                Log.PutError($"Exception occurred: {exception.Message}");
+            }
+        }
+
+        private async Task<bool> CheckBucketExistance(string bucket)
+        {
+            if (await AmazonS3Util.DoesS3BucketExistAsync(Client, Bucket).ConfigureAwait(false))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private async Task PutBacketToAmazon(string bucket)
+        {
+            var putRequest = new PutBucketRequest
+            {
+                BucketName = bucket,
+            };
+            await Client.PutBucketAsync(putRequest).ConfigureAwait(false);
+        }
+
+        private async Task<List<S3Object>> GetS3ObjectsList(string prefix = "")
+        {
+            var request = new ListObjectsRequest
+            {
+                BucketName = Bucket,
+                Prefix = prefix,
+            };
+
+            var objects = (await Client.ListObjectsAsync(request).ConfigureAwait(false)).S3Objects;
+            return objects;
+        }
+
+        private async Task DeleteObjects(List<S3Object> objects) // does not work, "Access denied" exception
+        {
+            try
+            {
+                var deleteRequest = new DeleteObjectsRequest { BucketName = Bucket };
+                foreach (var obj in objects)
+                {
+                    deleteRequest.AddKey(obj.Key);
+                    Log.PutOut($"{obj.Key} added to keyversion List for delete objects");
+                }
+
+                var deleteResponse = await Client.DeleteObjectsAsync(deleteRequest).ConfigureAwait(false);
+                Log.PutOut($"{objects.Capacity} objects deleted");
+            }
+            catch (DeleteObjectsException doe)
+            {
+                Log.PutError("Exception occurred: " + doe.Message);
+                var errorResponse = doe.Response;
+
+                foreach (var deletedObject in errorResponse.DeletedObjects)
+                {
+                    Log.PutError("Deleted item " + deletedObject.Key);
+                }
+
+                foreach (var deleteError in errorResponse.DeleteErrors)
+                {
+                    Log.PutError($"Error deleting item {deleteError.Key} Code - {deleteError.Code} Message - {deleteError.Message}");
+                }
+            }
         }
     }
 }
