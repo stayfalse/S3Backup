@@ -211,10 +211,10 @@ namespace S3Backup
                 var deleteResponse = await Client.DeleteObjectsAsync(deleteRequest).ConfigureAwait(false);
                 Log.PutOut($"{objects.Capacity} objects deleted");
             }
-            catch (DeleteObjectsException doe)
+            catch (DeleteObjectsException exception)
             {
-                Log.PutError("Exception occurred: " + doe.Message);
-                var errorResponse = doe.Response;
+                Log.PutError("Exception occurred: " + exception.Message);
+                var errorResponse = exception.Response;
 
                 foreach (var deletedObject in errorResponse.DeletedObjects)
                 {
