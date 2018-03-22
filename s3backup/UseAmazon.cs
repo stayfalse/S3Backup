@@ -185,7 +185,7 @@ namespace S3Backup
             await Client.PutBucketAsync(putRequest).ConfigureAwait(false);
         }
 
-        private async Task<List<S3Object>> GetS3ObjectsList(string prefix = "")
+        private async Task<List<S3Object>> GetS3ObjectsList(string prefix)
         {
             var request = new ListObjectsRequest
             {
