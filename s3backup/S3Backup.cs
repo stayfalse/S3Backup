@@ -18,7 +18,7 @@ namespace S3Backup
             if (!options.IllegalArgument)
             {
                 var clientInfo = GetClientInformation(options.ConfigFile);
-                await Synchronize(options, clientInfo).ConfigureAwait(false);
+                await Synchronize(options, GetAmazonFunctions(options.BucketName, clientInfo)).ConfigureAwait(false);
             }
             else
             {
@@ -26,20 +26,19 @@ namespace S3Backup
             }
         }
 
-        public static async Task Synchronize(Options options, ClientInformation clientInfo)
+        public static async Task Synchronize(Options options, IAmazonFunctions amazonFunctions)
         {
             Log.PutOut($"Synchronization started");
 
             var threshold = (options.RecycleAge != 0) ? DateTime.Now.Subtract(new TimeSpan(options.RecycleAge, 0, 0, 0)) : default;
-            var useAmazon = new UseAmazon(options.BucketName, clientInfo);
 
             if (options.Purge && !options.DryRun)
             {
                 Log.PutOut($"Purge bucket with remote path {options.RemotePath}");
-                await useAmazon.Purge(options.RemotePath).ConfigureAwait(false);
+                await amazonFunctions.Purge(options.RemotePath).ConfigureAwait(false);
             }
 
-            var objects = await useAmazon.GetObjectsList(options.RemotePath).ConfigureAwait(false);
+            var objects = await amazonFunctions.GetObjectsList(options.RemotePath).ConfigureAwait(false);
             Log.PutOut($"AmazonS3ObjectsList received (BucketName: {options.BucketName})");
 
             var filesInfo = GetFiles(options.LocalPath);
@@ -69,7 +68,7 @@ namespace S3Backup
 
                     if (!options.DryRun)
                     {
-                        await useAmazon.UploadObjectToBucket(fileInfo, options.LocalPath, options.PartSize).ConfigureAwait(false);
+                        await amazonFunctions.UploadObjectToBucket(fileInfo, options.LocalPath, options.PartSize).ConfigureAwait(false);
                         Log.PutOut($"Mismatched {fileInfo.Name} uploaded");
                         continue;
                     }
@@ -82,7 +81,7 @@ namespace S3Backup
                     if (!options.DryRun && s3object.LastModified < threshold)
                     {
                         Log.PutOut($"Delete object {s3object.Key} last modified = {s3object.LastModified}");
-                        await useAmazon.DeleteObject(s3object.Key).ConfigureAwait(false);
+                        await amazonFunctions.DeleteObject(s3object.Key).ConfigureAwait(false);
                         continue;
                     }
 
@@ -96,7 +95,7 @@ namespace S3Backup
                 foreach (var fileInfo in filesInfo)
                 {
                     Log.PutOut($"Upload {fileInfo.Key}");
-                    await useAmazon.UploadObjectToBucket(fileInfo.Value, options.LocalPath, options.PartSize).ConfigureAwait(false);
+                    await amazonFunctions.UploadObjectToBucket(fileInfo.Value, options.LocalPath, options.PartSize).ConfigureAwait(false);
                     Log.PutOut("Uploaded");
                 }
             }
@@ -113,6 +112,15 @@ namespace S3Backup
             .AddJsonFile(configFile)
             .Build()
             .Get<ClientInformation>() ?? new ClientInformation();
+
+        private static IAmazonFunctions GetAmazonFunctions(string bucketName, ClientInformation clientInfo)
+        {
+            if (clientInfo is null)
+            {
+                throw new ArgumentNullException(clientInfo.GetType().ToString());
+            }
+            return new UseAmazon(bucketName, clientInfo);
+        }
 
         private static Dictionary<string, FileInfo> GetFiles(string localPath)
         {
