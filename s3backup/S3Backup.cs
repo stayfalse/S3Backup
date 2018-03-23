@@ -118,7 +118,7 @@ namespace S3Backup
             return filesInfo;
         }
 
-        private static bool EqualETag(IS3Object s3Object, FileInfo fileInfo, int partSize)
+        private static bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo, int partSize)
         {
             if (string.Equals(s3Object.ETag, ComputeLocalETag(fileInfo, partSize), StringComparison.Ordinal))
             {
@@ -130,7 +130,7 @@ namespace S3Backup
             }
         }
 
-        private static bool EqualSize(IS3Object s3Object, FileInfo fileInfo)
+        private static bool EqualSize(S3ObjectInfo s3Object, FileInfo fileInfo)
         {
             if (fileInfo.Length == s3Object.Size)
             {
@@ -150,7 +150,7 @@ namespace S3Backup
             var md5 = MD5.Create();
             var hashLength = md5.HashSize / 8;
             var n = ((file.Length / partSize) * hashLength) + ((file.Length % partSize != 0) ? hashLength : 0);
-            byte[] sum = new byte[n];
+            var sum = new byte[n];
             var a = (file.Length > partSize) ? partSize : (int)file.Length;
             while (sumIndex < sum.Length)
             {

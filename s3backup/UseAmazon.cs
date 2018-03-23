@@ -9,7 +9,7 @@ using Amazon.S3.Util;
 
 namespace S3Backup
 {
-    public class UseAmazon : IAmazonFunctions
+    internal sealed class UseAmazon : IAmazonFunctions
     {
         private string _bucketName;
 
@@ -27,21 +27,22 @@ namespace S3Backup
 
             set
             {
-                if (!CheckBucketExistance(value).GetAwaiter().GetResult())
+                if (!CheckBucketExistence(value).ConfigureAwait(false).GetAwaiter().GetResult())
                 {
-                    PutBacketToAmazon(value).GetAwaiter().GetResult();
+                    PutBucketToAmazon(value).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
 
                 _bucketName = value;
             }
         }
 
-        public async Task<IEnumerable<IS3Object>> GetObjectsList(string prefix = "")
+        public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(string prefix)
         {
-            var list = new List<IS3Object>();
+            var list = new List<S3ObjectInfo>();
             foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
             {
-                list.Add(new AmazonS3Object(obj));
+                var objectInfo = new S3ObjectInfo(obj.Key, obj.Size, obj.ETag, obj.LastModified);
+                list.Add(objectInfo);
             }
 
             return list.AsReadOnly();
@@ -49,7 +50,9 @@ namespace S3Backup
 
         public async Task UploadObjectToBucket(FileInfo file, string localPath, int partSize)
         {
-            var objectKey = file.FullName.Remove(0, localPath.Length + 1).Replace("\\", "/");
+            var objectKey = file.FullName
+                .Remove(0, localPath.Length + 1)
+                .Replace('\\', '/');
             if (file.Length <= partSize)
             {
                 var putObjectRequest = new PutObjectRequest
@@ -60,7 +63,7 @@ namespace S3Backup
                 };
                 try
                 {
-                    PutObjectResponse putObjectResponse = await Client.PutObjectAsync(putObjectRequest).ConfigureAwait(false);
+                    var putObjectResponse = await Client.PutObjectAsync(putObjectRequest).ConfigureAwait(false);
                 }
                 catch (Exception exception)
                 {
@@ -76,11 +79,11 @@ namespace S3Backup
                 };
 
                 var multipartUploadResponse = await Client.InitiateMultipartUploadAsync(multipartUploadRequest).ConfigureAwait(false);
-                int a = (file.Length > partSize) ? partSize : (int)file.Length;
+                var a = (file.Length > partSize) ? partSize : (int)file.Length;
                 try
                 {
                     var list = new List<Task<UploadPartResponse>>();
-                    for (int i = 0; partSize * i < file.Length; i++)
+                    for (var i = 0; partSize * i < file.Length; i++)
                     {
                         var upload = new UploadPartRequest()
                         {
@@ -162,7 +165,7 @@ namespace S3Backup
             }
         }
 
-        private async Task<bool> CheckBucketExistance(string bucket)
+        private async Task<bool> CheckBucketExistence(string bucket)
         {
             if (await AmazonS3Util.DoesS3BucketExistAsync(Client, Bucket).ConfigureAwait(false))
             {
@@ -174,7 +177,7 @@ namespace S3Backup
             }
         }
 
-        private async Task PutBacketToAmazon(string bucket)
+        private async Task PutBucketToAmazon(string bucket)
         {
             var putRequest = new PutBucketRequest
             {
@@ -183,7 +186,7 @@ namespace S3Backup
             await Client.PutBucketAsync(putRequest).ConfigureAwait(false);
         }
 
-        private async Task<List<S3Object>> GetS3ObjectsList(string prefix = "")
+        private async Task<List<S3Object>> GetS3ObjectsList(string prefix)
         {
             var request = new ListObjectsRequest
             {
@@ -209,10 +212,10 @@ namespace S3Backup
                 var deleteResponse = await Client.DeleteObjectsAsync(deleteRequest).ConfigureAwait(false);
                 Log.PutOut($"{objects.Capacity} objects deleted");
             }
-            catch (DeleteObjectsException doe)
+            catch (DeleteObjectsException exception)
             {
-                Log.PutError("Exception occurred: " + doe.Message);
-                var errorResponse = doe.Response;
+                Log.PutError("Exception occurred: " + exception.Message);
+                var errorResponse = exception.Response;
 
                 foreach (var deletedObject in errorResponse.DeletedObjects)
                 {

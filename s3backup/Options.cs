@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace S3Backup
 {
-    public class Options
+    public sealed class Options
     {
         private readonly string _configFile;
 

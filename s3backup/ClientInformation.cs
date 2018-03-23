@@ -1,6 +1,6 @@
 ﻿namespace S3Backup
 {
-    public class ClientInformation
+    public sealed class ClientInformation
     {
         public string ServiceUrl { get; set; }
 
