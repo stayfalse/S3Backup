@@ -11,30 +11,23 @@ namespace S3Backup
 {
     internal sealed class UseAmazon : IAmazonFunctions
     {
-        private string _bucketName;
+        private readonly string _bucketName;
+        private readonly AmazonS3Client _client;
 
         public UseAmazon(string bucketName, ClientInformation config)
         {
-            SetClient(config);
-            Bucket = bucketName;
-        }
-
-        private AmazonS3Client Client { get; set; }
-
-        private string Bucket
-        {
-            get => _bucketName;
-
-            set
+            _client = GetClient(config);
+            if (!BucketExists(bucketName).ConfigureAwait(false).GetAwaiter().GetResult())
             {
-                if (!BucketExists(value).ConfigureAwait(false).GetAwaiter().GetResult())
-                {
-                    PutBucketToAmazon(value).ConfigureAwait(false).GetAwaiter().GetResult();
-                }
-
-                _bucketName = value;
+                PutBucketToAmazon(bucketName).ConfigureAwait(false).GetAwaiter().GetResult();
             }
+
+            _bucketName = bucketName;
         }
+
+        private AmazonS3Client Client => _client;
+
+        private string Bucket => _bucketName;
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(string prefix)
         {
@@ -149,7 +142,7 @@ namespace S3Backup
             await Task.WhenAll(deleteTasks).ConfigureAwait(false);
         }
 
-        private void SetClient(ClientInformation config)
+        private AmazonS3Client GetClient(ClientInformation config)
         {
             try
             {
@@ -157,11 +150,12 @@ namespace S3Backup
                 {
                     ServiceURL = config.ServiceUrl,
                 };
-                Client = new AmazonS3Client(config.AccessKey, config.SecretKey, s3Config);
+                return new AmazonS3Client(config.AccessKey, config.SecretKey, s3Config);
             }
             catch (Exception exception)
             {
                 Log.PutError($"Exception occurred: {exception.Message}");
+                return null;
             }
         }
 
