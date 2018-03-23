@@ -1,13 +1,12 @@
 ﻿using System;
 
 using Microsoft.Extensions.CommandLineUtils;
-using Microsoft.Extensions.Configuration;
 
 namespace S3Backup
 {
     public sealed class Options
     {
-        private readonly string _configFile;
+        private string _configFile;
 
         private bool _illegalArgument = false;
 
@@ -49,7 +48,7 @@ namespace S3Backup
                     LocalPath = localPathOption.Value();
                     BucketName = bucketNameOption.Value();
                     RemotePath = remotePathOption.Value();
-                    _configFile = configFileOption.Value();
+                    ConfigFile = configFileOption.Value();
 
                     SizeOnly = sizeOnlyOption.HasValue();
                     Purge = purgeOption.HasValue();
@@ -90,7 +89,11 @@ namespace S3Backup
 
         public string RemotePath { get; private set; }
 
-        public ClientInformation ClientInfo => string.IsNullOrEmpty(_configFile) ? GetClientInformation("appsettings.json") : GetClientInformation(_configFile);
+        public string ConfigFile
+        {
+            get => string.IsNullOrEmpty(_configFile) ? "appsettings.json" : _configFile;
+            private set => _configFile = value;
+        }
 
         private static int ParseArgument(string arg, int edge)
         {
@@ -103,8 +106,5 @@ namespace S3Backup
                 return 0;
             }
         }
-
-        private static ClientInformation GetClientInformation(string configFile)
-             => new ConfigurationBuilder().AddJsonFile(configFile).Build().Get<ClientInformation>() ?? new ClientInformation();
     }
 }

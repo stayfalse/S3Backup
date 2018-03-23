@@ -4,6 +4,8 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Configuration;
+
 using static System.FormattableString;
 
 namespace S3Backup
@@ -15,7 +17,8 @@ namespace S3Backup
             var options = new Options(args);
             if (!options.IllegalArgument)
             {
-                await Synchronize(options).ConfigureAwait(false);
+                var clientInfo = GetClientInformation(options.ConfigFile);
+                await Synchronize(options, clientInfo).ConfigureAwait(false);
             }
             else
             {
@@ -23,12 +26,12 @@ namespace S3Backup
             }
         }
 
-        public static async Task Synchronize(Options options)
+        public static async Task Synchronize(Options options, ClientInformation clientInfo)
         {
             Log.PutOut($"Synchronization started");
 
             var threshold = (options.RecycleAge != 0) ? DateTime.Now.Subtract(new TimeSpan(options.RecycleAge, 0, 0, 0)) : default;
-            IAmazonFunctions useAmazon = new UseAmazon(options.BucketName, options.ClientInfo);
+            var useAmazon = new UseAmazon(options.BucketName, clientInfo);
 
             if (options.Purge && !options.DryRun)
             {
@@ -104,6 +107,12 @@ namespace S3Backup
 
             Log.PutOut($"{(options.DryRun ? "DryRun" : "")} Synchronization completed");
         }
+
+        private static ClientInformation GetClientInformation(string configFile)
+            => new ConfigurationBuilder()
+            .AddJsonFile(configFile)
+            .Build()
+            .Get<ClientInformation>() ?? new ClientInformation();
 
         private static Dictionary<string, FileInfo> GetFiles(string localPath)
         {
