@@ -27,7 +27,7 @@ namespace S3Backup
 
             set
             {
-                if (!CheckBucketExistence(value).ConfigureAwait(false).GetAwaiter().GetResult())
+                if (!BucketExists(value).ConfigureAwait(false).GetAwaiter().GetResult())
                 {
                     PutBucketToAmazon(value).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
@@ -165,7 +165,7 @@ namespace S3Backup
             }
         }
 
-        private async Task<bool> CheckBucketExistence(string bucket)
+        private async Task<bool> BucketExists(string bucket)
         {
             if (await AmazonS3Util.DoesS3BucketExistAsync(Client, Bucket).ConfigureAwait(false))
             {
