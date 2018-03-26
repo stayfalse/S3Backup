@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace S3Backup
 {
-    public static class S3Backup
+    public static class Program
     {
         public static async Task Main(string[] args)
         {
