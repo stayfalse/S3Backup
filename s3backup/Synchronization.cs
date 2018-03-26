@@ -141,38 +141,40 @@ namespace S3Backup
 
         private string ComputeLocalETag(FileInfo file)
         {
-            var br = new BinaryReader(new FileStream(file.FullName, FileMode.Open));
-            var sumIndex = 0;
-            var parts = 0;
-            var md5 = MD5.Create();
-            var hashLength = md5.HashSize / 8;
-            var n = ((file.Length / _options.PartSize) * hashLength) + ((file.Length % _options.PartSize != 0) ? hashLength : 0);
-            var sum = new byte[n];
-            var a = (file.Length > _options.PartSize) ? _options.PartSize : (int)file.Length;
-            while (sumIndex < sum.Length)
+            var localETag = "";
+            using (var md5 = MD5.Create())
             {
-                md5.ComputeHash(br.ReadBytes(a)).CopyTo(sum, sumIndex);
-                parts++;
-                if (parts * _options.PartSize > file.Length)
+                var br = new BinaryReader(new FileStream(file.FullName, FileMode.Open));
+                var sumIndex = 0;
+                var parts = 0;
+                var hashLength = md5.HashSize / 8;
+                var n = ((file.Length / _options.PartSize) * hashLength) + ((file.Length % _options.PartSize != 0) ? hashLength : 0);
+                var sum = new byte[n];
+                var a = (file.Length > _options.PartSize) ? _options.PartSize : (int)file.Length;
+                while (sumIndex < sum.Length)
                 {
-                    a = (int)file.Length % _options.PartSize;
+                    md5.ComputeHash(br.ReadBytes(a)).CopyTo(sum, sumIndex);
+                    parts++;
+                    if (parts * _options.PartSize > file.Length)
+                    {
+                        a = (int)file.Length % _options.PartSize;
+                    }
+
+                    sumIndex += hashLength;
                 }
 
-                sumIndex += hashLength;
-            }
+                if (parts > 1)
+                {
+                    sum = md5.ComputeHash(sum);
+                }
 
-            if (parts > 1)
-            {
-                sum = md5.ComputeHash(sum);
-            }
+                for (var i = 0; i < sum.Length; i++)
+                {
+                    localETag = Invariant($"{localETag}{sum[i].ToString("x2")}");
+                }
 
-            var localETag = "";
-            for (var i = 0; i < sum.Length; i++)
-            {
-                localETag = Invariant($"{localETag}{sum[i].ToString("x2")}");
+                localETag = $"\"{localETag}{((parts > 1) ? $"-{parts}\"" : "\"")}";
             }
-
-            localETag = $"\"{localETag}{((parts > 1) ? $"-{parts}\"" : "\"")}";
 
             return localETag;
         }
