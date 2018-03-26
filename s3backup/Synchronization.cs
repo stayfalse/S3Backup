@@ -170,10 +170,10 @@ namespace S3Backup
 
                 for (var i = 0; i < sum.Length; i++)
                 {
-                    localETag = Invariant($"{localETag}{sum[i].ToString("x2")}");
+                    localETag = Invariant($"{localETag}{sum[i]:x2}");
                 }
 
-                localETag = $"\"{localETag}{((parts > 1) ? $"-{parts}\"" : "\"")}";
+                localETag = Invariant($"\"{localETag}{((parts > 1) ? $"-{parts}\"" : "\"")}");
             }
 
             return localETag;
