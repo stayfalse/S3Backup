@@ -18,7 +18,7 @@ namespace S3Backup
             }
             else
             {
-                Log.PutOut("Synchronization can not be started in case of incorrect command line arguments");
+                Log.PutOut($"Synchronization can not be started in case of incorrect command line arguments");
             }
         }
 

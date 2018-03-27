@@ -6,14 +6,14 @@ namespace S3Backup
 {
     public static class Log
     {
-        public static void PutOut(string data)
+        public static void PutOut(FormattableString data)
         {
-            Out.WriteLine($"{DateTime.UtcNow.ToString("s", System.Globalization.CultureInfo.InvariantCulture)} {data}");
+            Out.WriteLine(FormattableString.Invariant($"{DateTime.UtcNow:o} {data}"));
         }
 
-        public static void PutError(string data)
+        public static void PutError(FormattableString data)
         {
-            Error.WriteLine($"{DateTime.UtcNow.ToString("s", System.Globalization.CultureInfo.InvariantCulture)} {data}");
+            Error.WriteLine(FormattableString.Invariant($"{DateTime.UtcNow:o} {data}"));
         }
     }
 }

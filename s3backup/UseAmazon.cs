@@ -208,12 +208,12 @@ namespace S3Backup
             }
             catch (DeleteObjectsException exception)
             {
-                Log.PutError("Exception occurred: " + exception.Message);
+                Log.PutError($"Exception occurred: {exception.Message}");
                 var errorResponse = exception.Response;
 
                 foreach (var deletedObject in errorResponse.DeletedObjects)
                 {
-                    Log.PutError("Deleted item " + deletedObject.Key);
+                    Log.PutError($"Deleted item  {deletedObject.Key}");
                 }
 
                 foreach (var deleteError in errorResponse.DeleteErrors)

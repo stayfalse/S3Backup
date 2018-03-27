@@ -52,12 +52,12 @@ namespace S3Backup
                 {
                     Log.PutOut($"Upload {fileInfo.Key}");
                     await _amazonFunctions.UploadObjectToBucket(fileInfo.Value, _options.LocalPath, _options.PartSize).ConfigureAwait(false);
-                    Log.PutOut("Uploaded");
+                    Log.PutOut($"Uploaded");
                 }
             }
             else
             {
-                Log.PutOut("Skip upload");
+                Log.PutOut($"Skip upload");
             }
 
             Log.PutOut($"{(_options.DryRun ? "DryRun" : "")} Synchronization completed");
