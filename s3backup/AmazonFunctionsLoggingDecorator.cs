@@ -16,7 +16,7 @@ namespace S3Backup
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(string prefix)
         {
-            Log.PutOut($"Receive AmazonS3ObjectsList (RemotePath: {prefix}");
+            Log.PutOut($"Receive AmazonS3ObjectsList (RemotePath: {prefix})");
             return await _amazonFunctions.GetObjectsList(prefix).ConfigureAwait(false);
         }
 
