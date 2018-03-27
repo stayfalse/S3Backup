@@ -35,12 +35,10 @@ namespace S3Backup
 
             if (_options.Purge && !_options.DryRun)
             {
-                Log.PutOut($"Purge bucket with remote path {_options.RemotePath}");
                 await _amazonFunctions.Purge(_options.RemotePath).ConfigureAwait(false);
             }
 
             var objects = await _amazonFunctions.GetObjectsList(_options.RemotePath).ConfigureAwait(false);
-            Log.PutOut($"AmazonS3ObjectsList received (RemotePath: {_options.RemotePath})");
             var filesInfo = GetFiles();
             Log.PutOut($"FileInfo dictionary received (LocalPath: {_options.LocalPath})");
             filesInfo = await CompareFilesAndObjectsLists(filesInfo, objects).ConfigureAwait(false);
@@ -104,7 +102,6 @@ namespace S3Backup
                     if (!_options.DryRun)
                     {
                         await _amazonFunctions.UploadObjectToBucket(fileInfo, _options.LocalPath, _options.PartSize).ConfigureAwait(false);
-                        Log.PutOut($"Mismatched {fileInfo.Name} uploaded");
                         continue;
                     }
 
@@ -115,7 +112,6 @@ namespace S3Backup
                     Log.PutOut($"File for object key {s3object.Key} not found");
                     if (!_options.DryRun && s3object.LastModified < threshold)
                     {
-                        Log.PutOut($"Delete object {s3object.Key} last modified = {s3object.LastModified}");
                         await _amazonFunctions.DeleteObject(s3object.Key).ConfigureAwait(false);
                         continue;
                     }

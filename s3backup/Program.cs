@@ -40,7 +40,7 @@ namespace S3Backup
                 throw new ArgumentNullException(nameof(bucketName));
             }
 
-            return new UseAmazon(bucketName, clientInfo);
+            return new AmazonFunctionsLoggingDecorator(new UseAmazon(bucketName, clientInfo));
         }
     }
 }
