@@ -7,7 +7,7 @@ namespace S3Backup
 {
     public class AmazonFunctionsLoggingDecorator : IAmazonFunctions
     {
-        private IAmazonFunctions _amazonFunctions;
+        private readonly IAmazonFunctions _amazonFunctions;
 
         public AmazonFunctionsLoggingDecorator(IAmazonFunctions amazonFunctions)
         {
@@ -24,6 +24,7 @@ namespace S3Backup
         {
             Log.PutOut($"Upload {file.Name} to bucket");
             await _amazonFunctions.UploadObjectToBucket(file, localPath, partSize).ConfigureAwait(false);
+            Log.PutOut($"Uploaded");
         }
 
         public async Task DeleteObject(string key)

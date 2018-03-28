@@ -13,7 +13,8 @@ namespace S3Backup
             if (!options.IllegalArgument)
             {
                 var clientInfo = GetClientInformation(options.ConfigFile);
-                var synchronization = new Synchronization(options, GetAmazonFunctions(options.BucketName, clientInfo));
+                var amazonFunctions = GetAmazonFunctions(options.BucketName, clientInfo);
+                var synchronization = new Synchronization(options, amazonFunctions, GetSynchronizationFunctions(options, amazonFunctions));
                 await synchronization.Synchronize().ConfigureAwait(false);
             }
             else
@@ -41,6 +42,11 @@ namespace S3Backup
             }
 
             return new AmazonFunctionsLoggingDecorator(new UseAmazon(bucketName, clientInfo));
+        }
+
+        private static ISynchronizationFunctions GetSynchronizationFunctions(Options options, IAmazonFunctions amazonFunctions)
+        {
+            return new SynchronizationFunctionsLoggingDecorator(options.DryRun, new SynchronizationFunctions(options, amazonFunctions));
         }
     }
 }
