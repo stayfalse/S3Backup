@@ -10,18 +10,16 @@ namespace S3Backup
 {
     public class SynchronizationFunctions : ISynchronizationFunctions
     {
-        private readonly Options _options;
         private readonly IAmazonFunctions _amazonFunctions;
 
-        public SynchronizationFunctions(Options options, IAmazonFunctions amazonFunctions)
+        public SynchronizationFunctions(IAmazonFunctions amazonFunctions)
         {
-            _options = options;
             _amazonFunctions = amazonFunctions;
         }
 
-        public Dictionary<string, FileInfo> GetFiles()
+        public Dictionary<string, FileInfo> GetFiles(string localPath)
         {
-            var files = new DirectoryInfo(_options.LocalPath)
+            var files = new DirectoryInfo(localPath)
                 .GetFiles("*", SearchOption.AllDirectories);
             var filesInfo = new Dictionary<string, FileInfo>();
             foreach (var fileInfo in files)
@@ -32,13 +30,13 @@ namespace S3Backup
             return filesInfo;
         }
 
-        public async Task<bool> TryUploadMissingFiles(Dictionary<string, FileInfo> filesInfo)
+        public async Task<bool> TryUploadMissingFiles(Dictionary<string, FileInfo> filesInfo, bool dryRun, string localPath, int partSize)
         {
-            if (!_options.DryRun)
+            if (!dryRun)
             {
                 foreach (var fileInfo in filesInfo)
                 {
-                    await _amazonFunctions.UploadObjectToBucket(fileInfo.Value, _options.LocalPath, _options.PartSize).ConfigureAwait(false);
+                    await _amazonFunctions.UploadObjectToBucket(fileInfo.Value, localPath, partSize).ConfigureAwait(false);
                 }
 
                 return true;
@@ -49,11 +47,11 @@ namespace S3Backup
             }
         }
 
-        public async Task<bool> TryUploadMismatchedFile(FileInfo fileInfo)
+        public async Task<bool> TryUploadMismatchedFile(FileInfo fileInfo, bool dryRun, string localPath, int partSize)
         {
-            if (!_options.DryRun)
+            if (!dryRun)
             {
-                await _amazonFunctions.UploadObjectToBucket(fileInfo, _options.LocalPath, _options.PartSize).ConfigureAwait(false);
+                await _amazonFunctions.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
                 return true;
             }
             else
@@ -62,10 +60,10 @@ namespace S3Backup
             }
         }
 
-        public async Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object)
+        public async Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, int recycleAge)
         {
-            var threshold = (_options.RecycleAge != 0) ? DateTime.Now.Subtract(new TimeSpan(_options.RecycleAge, 0, 0, 0)) : default;
-            if (!_options.DryRun && s3Object.LastModified < threshold)
+            var threshold = (recycleAge != 0) ? DateTime.Now.Subtract(new TimeSpan(recycleAge, 0, 0, 0)) : default;
+            if (!dryRun && s3Object.LastModified < threshold)
             {
                 await _amazonFunctions.DeleteObject(s3Object.Key).ConfigureAwait(false);
                 return true;
@@ -78,29 +76,15 @@ namespace S3Backup
 
         public bool EqualSize(S3ObjectInfo s3Object, FileInfo fileInfo)
         {
-            if (s3Object.Size == fileInfo.Length)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return s3Object.Size == fileInfo.Length;
         }
 
-        public bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo)
+        public bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo, int partSize)
         {
-            if (string.Equals(s3Object.ETag, ComputeLocalETag(fileInfo), StringComparison.Ordinal))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return string.Equals(s3Object.ETag, ComputeLocalETag(fileInfo, partSize), StringComparison.Ordinal);
         }
 
-        private string ComputeLocalETag(FileInfo file)
+        private string ComputeLocalETag(FileInfo file, int partSize)
         {
             var localETag = "";
             using (var md5 = MD5.Create())
@@ -109,16 +93,16 @@ namespace S3Backup
                 var sumIndex = 0;
                 var parts = 0;
                 var hashLength = md5.HashSize / 8;
-                var n = ((file.Length / _options.PartSize) * hashLength) + ((file.Length % _options.PartSize != 0) ? hashLength : 0);
+                var n = ((file.Length / partSize) * hashLength) + ((file.Length % partSize != 0) ? hashLength : 0);
                 var sum = new byte[n];
-                var a = (file.Length > _options.PartSize) ? _options.PartSize : (int)file.Length;
+                var a = (file.Length > partSize) ? partSize : (int)file.Length;
                 while (sumIndex < sum.Length)
                 {
                     md5.ComputeHash(br.ReadBytes(a)).CopyTo(sum, sumIndex);
                     parts++;
-                    if (parts * _options.PartSize > file.Length)
+                    if (parts * partSize > file.Length)
                     {
-                        a = (int)file.Length % _options.PartSize;
+                        a = (int)file.Length % partSize;
                     }
 
                     sumIndex += hashLength;

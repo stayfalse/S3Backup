@@ -38,11 +38,13 @@ namespace S3Backup
             }
 
             var objects = await _amazonFunctions.GetObjectsList(_options.RemotePath).ConfigureAwait(false);
-            var filesInfo = _synchronizationFunctions.GetFiles();
+            var filesInfo = _synchronizationFunctions.GetFiles(_options.LocalPath);
 
             filesInfo = await CompareFilesAndObjectsLists(filesInfo, objects).ConfigureAwait(false);
 
-            await _synchronizationFunctions.TryUploadMissingFiles(filesInfo).ConfigureAwait(false);
+            await _synchronizationFunctions
+                .TryUploadMissingFiles(filesInfo, _options.DryRun, _options.LocalPath, _options.PartSize)
+                .ConfigureAwait(false);
 
             Log.PutOut($"{(_options.DryRun ? "DryRun" : "")} Synchronization completed");
         }
@@ -60,12 +62,14 @@ namespace S3Backup
                     }
                     else
                     {
-                        await _synchronizationFunctions.TryUploadMismatchedFile(fileInfo).ConfigureAwait(false);
+                        await _synchronizationFunctions
+                            .TryUploadMismatchedFile(fileInfo, _options.DryRun, _options.LocalPath, _options.PartSize)
+                            .ConfigureAwait(false);
                     }
                 }
                 else
                 {
-                    await _synchronizationFunctions.TryDeleteMismatchedObject(s3Object).ConfigureAwait(false);
+                    await _synchronizationFunctions.TryDeleteMismatchedObject(s3Object, _options.DryRun, _options.RecycleAge).ConfigureAwait(false);
                 }
             }
 
@@ -84,7 +88,7 @@ namespace S3Backup
                 }
                 else
                 {
-                    if (_synchronizationFunctions.EqualETag(s3Object, fileInfo))
+                    if (_synchronizationFunctions.EqualETag(s3Object, fileInfo, _options.PartSize))
                     {
                         return true;
                     }

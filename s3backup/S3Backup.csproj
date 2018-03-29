@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.0-preview1-final" />
     <PackageReference Include="AsyncUsageAnalyzers" Version="1.0.0-alpha003" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.0" />
+    <PackageReference Include="SimpleInjector" Version="4.1.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta006" />
     <AdditionalFiles Include="..\shared\stylecop.json" />
   </ItemGroup>

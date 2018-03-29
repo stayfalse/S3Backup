@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Configuration;
 
+using SimpleInjector;
+
 namespace S3Backup
 {
     public static class Program
@@ -13,8 +15,8 @@ namespace S3Backup
             if (!options.IllegalArgument)
             {
                 var clientInfo = GetClientInformation(options.ConfigFile);
-                var amazonFunctions = GetAmazonFunctions(options.BucketName, clientInfo);
-                var synchronization = new Synchronization(options, amazonFunctions, GetSynchronizationFunctions(options, amazonFunctions));
+                var container = GetContainer(clientInfo, options.BucketName);
+                var synchronization = new Synchronization(options, container.GetInstance<IAmazonFunctions>(), container.GetInstance<ISynchronizationFunctions>());
                 await synchronization.Synchronize().ConfigureAwait(false);
             }
             else
@@ -29,24 +31,14 @@ namespace S3Backup
             .Build()
             .Get<ClientInformation>() ?? new ClientInformation();
 
-        private static IAmazonFunctions GetAmazonFunctions(string bucketName, ClientInformation clientInfo)
+        private static Container GetContainer(ClientInformation clientinfo, string bucketName)
         {
-            if (clientInfo is null)
-            {
-                throw new ArgumentNullException(nameof(clientInfo));
-            }
-
-            if (string.IsNullOrEmpty(bucketName))
-            {
-                throw new ArgumentNullException(nameof(bucketName));
-            }
-
-            return new AmazonFunctionsLoggingDecorator(new UseAmazon(bucketName, clientInfo));
-        }
-
-        private static ISynchronizationFunctions GetSynchronizationFunctions(Options options, IAmazonFunctions amazonFunctions)
-        {
-            return new SynchronizationFunctionsLoggingDecorator(options.DryRun, new SynchronizationFunctions(options, amazonFunctions));
+            var container = new Container();
+            container.Register<IAmazonFunctions>(() => new UseAmazon(bucketName, clientinfo));
+            container.RegisterDecorator<IAmazonFunctions, AmazonFunctionsLoggingDecorator>();
+            container.Register<ISynchronizationFunctions, SynchronizationFunctions>();
+            container.RegisterDecorator<ISynchronizationFunctions, SynchronizationFunctionsLoggingDecorator>();
+            return container;
         }
     }
 }
