@@ -1,73 +1,25 @@
-﻿using System;
-
-using Microsoft.Extensions.CommandLineUtils;
-
-namespace S3Backup
+﻿namespace S3Backup
 {
     public sealed class Options
     {
-        private string _configFile;
-
-        private bool _illegalArgument = false;
-
-        private int _parallelParts;
-
-        public Options(string[] args)
+        public Options(bool illegalArgumet, bool dryRun, bool sizeOnly, bool purge, string bucketName, string localPath, string remotePath, int partSize, int recycleAge, int paralellParts, ClientInformation clientInfo)
         {
-            var app = new CommandLineApplication();
-            app.Name = "S3Backup";
-            app.HelpOption("-?|-h|--help");
-
-            var localPathOption = app.Option("-l  | --local", "set Local Path", CommandOptionType.SingleValue);
-            var bucketNameOption = app.Option("-b  | --bucket", "set Bucket Name", CommandOptionType.SingleValue);
-            var remotePathOption = app.Option("-rp | --remotePath", "set Remote Path", CommandOptionType.SingleValue);
-            var configFileOption = app.Option("-c  | --config", "set AWS config file path", CommandOptionType.SingleValue);
-
-            var recycleAgeOption = app.Option("-ra | --recycleAge", "set recycle age in days (default is not set)", CommandOptionType.SingleValue);
-            var parallelPartsOption = app.Option("-pp | --parallelParts", "ParallelParts", CommandOptionType.SingleValue);
-
-            var sizeOnlyOption = app.Option("-s  | --sizeonly", "do not compare checksums", CommandOptionType.NoValue);
-            var purgeOption = app.Option("-p  | --purge", "purge bucket contents before synchronizing (CAUTION!)", CommandOptionType.NoValue);
-            var dryRunOption = app.Option("-d  | --dryRun", "DryRun", CommandOptionType.NoValue);
-
-            app.Execute(args);
-            if (!localPathOption.HasValue() || !bucketNameOption.HasValue() || !remotePathOption.HasValue())
-            {
-                IllegalArgument = true;
-            }
-            else
-            {
-                RecycleAge = ParseArgument(recycleAgeOption.Value(), 366);
-                ParallelParts = ParseArgument(parallelPartsOption.Value(), 64);
-                if (RecycleAge < 0 || ParallelParts < 0)
-                {
-                    IllegalArgument = true;
-                }
-
-                {
-                    LocalPath = localPathOption.Value();
-                    BucketName = bucketNameOption.Value();
-                    RemotePath = remotePathOption.Value();
-                    ConfigFile = configFileOption.Value();
-
-                    SizeOnly = sizeOnlyOption.HasValue();
-                    Purge = purgeOption.HasValue();
-                    DryRun = dryRunOption.HasValue();
-                }
-            }
+            IllegalArgument = illegalArgumet;
+            DryRun = dryRun;
+            SizeOnly = sizeOnly;
+            Purge = purge;
+            BucketName = bucketName;
+            LocalPath = localPath;
+            RemotePath = remotePath;
+            PartSize = partSize;
+            RecycleAge = recycleAge;
+            ParallelParts = paralellParts;
+            ClientInformation = clientInfo;
         }
 
-        public bool IllegalArgument
-        {
-            get => _illegalArgument;
+        public bool IllegalArgument { get; private set; }
 
-            set
-            {
-                _illegalArgument = value;
-            }
-        }
-
-        public int PartSize => (int)Math.Pow(2, 20) * 250;
+        public int PartSize { get; private set; }
 
         public bool DryRun { get; private set; }
 
@@ -75,11 +27,7 @@ namespace S3Backup
 
         public bool SizeOnly { get; private set; }
 
-        public int ParallelParts
-        {
-            get => (_parallelParts == 0) ? 4 : _parallelParts;
-            private set => _parallelParts = value;
-        }
+        public int ParallelParts { get; private set; }
 
         public int RecycleAge { get; private set; }
 
@@ -89,22 +37,6 @@ namespace S3Backup
 
         public string RemotePath { get; private set; }
 
-        public string ConfigFile
-        {
-            get => string.IsNullOrEmpty(_configFile) ? "appsettings.json" : _configFile;
-            private set => _configFile = value;
-        }
-
-        private static int ParseArgument(string arg, int edge)
-        {
-            if (int.TryParse(arg, out var a))
-            {
-                return (a < 1 || a > edge) ? -1 : a;
-            }
-            else
-            {
-                return 0;
-            }
-        }
+        public ClientInformation ClientInformation { get; private set; }
     }
 }

@@ -14,15 +14,16 @@ namespace S3Backup
         private readonly string _bucketName;
         private readonly AmazonS3Client _client;
 
-        public UseAmazon(string bucketName, ClientInformation config)
+        public UseAmazon(IOptionsSource optionsSource)
         {
-            _client = GetClient(config);
-            if (!BucketExists(bucketName).ConfigureAwait(false).GetAwaiter().GetResult())
+            var options = optionsSource.Options;
+            _client = GetClient(options.ClientInformation);
+            if (!BucketExists(options.BucketName).ConfigureAwait(false).GetAwaiter().GetResult())
             {
-                PutBucketToAmazon(bucketName).ConfigureAwait(false).GetAwaiter().GetResult();
+                PutBucketToAmazon(options.BucketName).ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
-            _bucketName = bucketName;
+            _bucketName = options.BucketName;
         }
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(string prefix)

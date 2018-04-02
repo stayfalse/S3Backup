@@ -11,11 +11,11 @@ namespace S3Backup
         private readonly IAmazonFunctions _amazonFunctions;
         private readonly ISynchronizationFunctions _synchronizationFunctions;
 
-        public Synchronization(Options options, IAmazonFunctions amazonFunctions, ISynchronizationFunctions synchronizationFunctions)
+        public Synchronization(IOptionsSource optionsSource, IAmazonFunctions amazonFunctions, ISynchronizationFunctions synchronizationFunctions)
         {
-            if (options is null)
+            if (optionsSource is null)
             {
-                throw new ArgumentNullException(nameof(options));
+                throw new ArgumentNullException(nameof(optionsSource));
             }
 
             if (amazonFunctions is null)
@@ -23,7 +23,7 @@ namespace S3Backup
                 throw new ArgumentNullException(nameof(amazonFunctions));
             }
 
-            _options = options;
+            _options = optionsSource.Options;
             _amazonFunctions = amazonFunctions;
             _synchronizationFunctions = synchronizationFunctions;
         }

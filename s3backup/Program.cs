@@ -1,9 +1,9 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 using Microsoft.Extensions.Configuration;
 
 using SimpleInjector;
+using SimpleInjector.Diagnostics;
 
 namespace S3Backup
 {
@@ -11,11 +11,11 @@ namespace S3Backup
     {
         public static async Task Main(string[] args)
         {
-            var options = new Options(args);
-            if (!options.IllegalArgument)
+            var container = GetContainer(args);
+
+            var options = container.GetInstance<IOptionsSource>();
+            if (!options.Options.IllegalArgument)
             {
-                var clientInfo = GetClientInformation(options.ConfigFile);
-                var container = GetContainer(clientInfo, options.BucketName);
                 var synchronization = new Synchronization(options, container.GetInstance<IAmazonFunctions>(), container.GetInstance<ISynchronizationFunctions>());
                 await synchronization.Synchronize().ConfigureAwait(false);
             }
@@ -31,13 +31,22 @@ namespace S3Backup
             .Build()
             .Get<ClientInformation>() ?? new ClientInformation();
 
-        private static Container GetContainer(ClientInformation clientinfo, string bucketName)
+        private static Container GetContainer(string[] args)
         {
             var container = new Container();
-            container.Register<IAmazonFunctions>(() => new UseAmazon(bucketName, clientinfo));
+            container.Register<IArgsParser, ArgsParser>();
+            container.RegisterSingleton<IOptionsSource>(() => new OptionsSource(args, container.GetInstance<IArgsParser>()));
+            container.Register<IAmazonFunctions, UseAmazon>();
             container.RegisterDecorator<IAmazonFunctions, AmazonFunctionsLoggingDecorator>();
             container.Register<ISynchronizationFunctions, SynchronizationFunctions>();
             container.RegisterDecorator<ISynchronizationFunctions, SynchronizationFunctionsLoggingDecorator>();
+            container.Verify(VerificationOption.VerifyAndDiagnose);
+            var results = Analyzer.Analyze(container);
+            if (results.Length != 0)
+            {
+                throw new DiagnosticVerificationException(results);
+            }
+
             return container;
         }
     }
