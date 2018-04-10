@@ -60,9 +60,8 @@ namespace S3Backup
             }
         }
 
-        public async Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, int recycleAge)
+        public async Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, DateTime threshold)
         {
-            var threshold = (recycleAge != 0) ? DateTime.Now.Subtract(new TimeSpan(recycleAge, 0, 0, 0)) : default;
             if (!dryRun && s3Object.LastModified < threshold)
             {
                 await _amazonFunctions.DeleteObject(s3Object.Key).ConfigureAwait(false);
@@ -84,7 +83,7 @@ namespace S3Backup
             return string.Equals(s3Object.ETag, ComputeLocalETag(fileInfo, partSize), StringComparison.Ordinal);
         }
 
-        private string ComputeLocalETag(FileInfo file, int partSize)
+        private static string ComputeLocalETag(FileInfo file, int partSize)
         {
             var localETag = "";
             using (var md5 = MD5.Create())

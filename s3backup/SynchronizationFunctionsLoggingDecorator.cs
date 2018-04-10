@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -47,10 +48,10 @@ namespace S3Backup
             }
         }
 
-        public async Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, int recycleAge)
+        public async Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, DateTime threshold)
         {
             Log.PutOut($"File for object key {s3Object.Key} not found");
-            if (await _inner.TryDeleteMismatchedObject(s3Object, dryRun, recycleAge).ConfigureAwait(false))
+            if (await _inner.TryDeleteMismatchedObject(s3Object, dryRun, threshold).ConfigureAwait(false))
             {
                 return true;
             }

@@ -30,9 +30,15 @@ namespace S3Backup
 
         public async Task Synchronize()
         {
+            if (_options.IllegalArgument)
+            {
+                Log.PutOut($"Synchronization can not be started in case of incorrect command line arguments");
+                return;
+            }
+
             Log.PutOut($"Synchronization started");
 
-            if (_options.Purge && !_options.DryRun)
+            if (((_options.OptionCases & OptionCases.DryRun) != OptionCases.DryRun) && _options.OptionCases.HasFlag(OptionCases.Purge))
             {
                 await _amazonFunctions.Purge(_options.RemotePath).ConfigureAwait(false);
             }
@@ -43,10 +49,10 @@ namespace S3Backup
             filesInfo = await CompareFilesAndObjectsLists(filesInfo, objects).ConfigureAwait(false);
 
             await _synchronizationFunctions
-                .TryUploadMissingFiles(filesInfo, _options.DryRun, _options.LocalPath, _options.PartSize)
+                .TryUploadMissingFiles(filesInfo, _options.OptionCases.HasFlag(OptionCases.DryRun), _options.LocalPath, _options.PartSize)
                 .ConfigureAwait(false);
 
-            Log.PutOut($"{(_options.DryRun ? "DryRun" : "")} Synchronization completed");
+            Log.PutOut($"{((_options.OptionCases & OptionCases.DryRun) == OptionCases.DryRun ? "DryRun" : "")} Synchronization completed");
         }
 
         private async Task<Dictionary<string, FileInfo>> CompareFilesAndObjectsLists(Dictionary<string, FileInfo> filesInfo, IEnumerable<S3ObjectInfo> objects)
@@ -63,13 +69,15 @@ namespace S3Backup
                     else
                     {
                         await _synchronizationFunctions
-                            .TryUploadMismatchedFile(fileInfo, _options.DryRun, _options.LocalPath, _options.PartSize)
+                            .TryUploadMismatchedFile(fileInfo, _options.OptionCases.HasFlag(OptionCases.DryRun), _options.LocalPath, _options.PartSize)
                             .ConfigureAwait(false);
                     }
                 }
                 else
                 {
-                    await _synchronizationFunctions.TryDeleteMismatchedObject(s3Object, _options.DryRun, _options.RecycleAge).ConfigureAwait(false);
+                    await _synchronizationFunctions
+                        .TryDeleteMismatchedObject(s3Object, _options.OptionCases.HasFlag(OptionCases.DryRun), RecycleAge.ParseToDateTime(_options.RecycleAge))
+                        .ConfigureAwait(false);
                 }
             }
 
@@ -82,7 +90,7 @@ namespace S3Backup
 
             if (_synchronizationFunctions.EqualSize(s3Object, fileInfo))
             {
-                if (_options.SizeOnly)
+                if (_options.OptionCases.HasFlag(OptionCases.SizeOnly))
                 {
                     return true;
                 }

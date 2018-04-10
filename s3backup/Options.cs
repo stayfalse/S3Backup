@@ -2,41 +2,43 @@
 {
     public sealed class Options
     {
-        public Options(bool illegalArgumet, bool dryRun, bool sizeOnly, bool purge, string bucketName, string localPath, string remotePath, int partSize, int recycleAge, int paralellParts, ClientInformation clientInfo)
+        public Options(bool illegalArgumet, OptionCases optionCases, LocalPath localPath, RemotePath remotePath, PartSize partSize, RecycleAge recycleAge, ParallelParts paralellParts)
         {
             IllegalArgument = illegalArgumet;
-            DryRun = dryRun;
-            SizeOnly = sizeOnly;
-            Purge = purge;
-            BucketName = bucketName;
+
+            OptionCases = optionCases;
             LocalPath = localPath;
             RemotePath = remotePath;
             PartSize = partSize;
             RecycleAge = recycleAge;
             ParallelParts = paralellParts;
-            ClientInformation = clientInfo;
         }
 
         public bool IllegalArgument { get; private set; }
 
-        public int PartSize { get; private set; }
+        public PartSize PartSize { get; private set; }
 
-        public bool DryRun { get; private set; }
+        public OptionCases OptionCases { get; private set; }
 
-        public bool Purge { get; private set; }
+        public ParallelParts ParallelParts { get; private set; }
 
-        public bool SizeOnly { get; private set; }
+        public RecycleAge RecycleAge { get; private set; }
 
-        public int ParallelParts { get; private set; }
+        public LocalPath LocalPath { get; private set; }
 
-        public int RecycleAge { get; private set; }
+        public RemotePath RemotePath { get; private set; }
+    }
 
-        public string LocalPath { get; private set; }
-
-        public string BucketName { get; private set; }
-
-        public string RemotePath { get; private set; }
+    public sealed class AmazonOptions
+    {
+        public AmazonOptions(ClientInformation clientInformation, BucketName bucketName)
+        {
+            ClientInformation = clientInformation;
+            BucketName = bucketName;
+        }
 
         public ClientInformation ClientInformation { get; private set; }
+
+        public BucketName BucketName { get; private set; }
     }
 }

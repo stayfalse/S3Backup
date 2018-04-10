@@ -16,7 +16,7 @@ namespace S3Backup
 
         public UseAmazon(IOptionsSource optionsSource)
         {
-            var options = optionsSource.Options;
+            var options = optionsSource.AmazonOptions;
             _client = GetClient(options.ClientInformation);
             if (!BucketExists(options.BucketName).ConfigureAwait(false).GetAwaiter().GetResult())
             {
