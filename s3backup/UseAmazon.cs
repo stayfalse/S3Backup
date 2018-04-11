@@ -11,20 +11,19 @@ namespace S3Backup
 {
     internal sealed class UseAmazon : IAmazonFunctions
     {
-        private readonly string _bucketName;
-        private readonly AmazonS3Client _client;
+        private readonly Lazy<BucketName> _bucketName;
+        private readonly Lazy<AmazonS3Client> _client;
 
         public UseAmazon(IOptionsSource optionsSource)
         {
             var options = optionsSource.AmazonOptions;
-            _client = GetClient(options.ClientInformation);
-            if (!BucketExists(options.BucketName).ConfigureAwait(false).GetAwaiter().GetResult())
-            {
-                PutBucketToAmazon(options.BucketName).ConfigureAwait(false).GetAwaiter().GetResult();
-            }
-
-            _bucketName = options.BucketName;
+            _client = new Lazy<AmazonS3Client>(() => GetClient(options.ClientInformation));
+            _bucketName = new Lazy<BucketName>(() => ConfirmBucketExistence(options.BucketName));
         }
+
+        private BucketName BucketName => _bucketName.Value;
+
+        private AmazonS3Client Client => _client.Value;
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(string prefix)
         {
@@ -47,13 +46,13 @@ namespace S3Backup
             {
                 var putObjectRequest = new PutObjectRequest
                 {
-                    BucketName = _bucketName,
+                    BucketName = BucketName,
                     Key = objectKey,
                     FilePath = file.FullName,
                 };
                 try
                 {
-                    var putObjectResponse = await _client.PutObjectAsync(putObjectRequest).ConfigureAwait(false);
+                    var putObjectResponse = await Client.PutObjectAsync(putObjectRequest).ConfigureAwait(false);
                 }
                 catch (Exception exception)
                 {
@@ -64,11 +63,11 @@ namespace S3Backup
             {
                 var multipartUploadRequest = new InitiateMultipartUploadRequest()
                 {
-                    BucketName = _bucketName,
+                    BucketName = BucketName,
                     Key = objectKey,
                 };
 
-                var multipartUploadResponse = await _client.InitiateMultipartUploadAsync(multipartUploadRequest).ConfigureAwait(false);
+                var multipartUploadResponse = await Client.InitiateMultipartUploadAsync(multipartUploadRequest).ConfigureAwait(false);
                 var a = (file.Length > partSize) ? partSize : (int)file.Length;
                 try
                 {
@@ -77,7 +76,7 @@ namespace S3Backup
                     {
                         var upload = new UploadPartRequest()
                         {
-                            BucketName = _bucketName,
+                            BucketName = BucketName,
                             Key = objectKey,
                             UploadId = multipartUploadResponse.UploadId,
                             PartNumber = i + 1,
@@ -90,29 +89,29 @@ namespace S3Backup
                             a = (int)file.Length % partSize;
                         }
 
-                        list.Add(_client.UploadPartAsync(upload));
+                        list.Add(Client.UploadPartAsync(upload));
                     }
 
                     var partResponses = Task.WhenAll(list);
                     var compRequest = new CompleteMultipartUploadRequest
                     {
-                        BucketName = _bucketName,
+                        BucketName = BucketName,
                         Key = objectKey,
                         UploadId = multipartUploadResponse.UploadId,
                     };
                     compRequest.AddPartETags(await partResponses.ConfigureAwait(false));
-                    var completeUploadResponse = await _client.CompleteMultipartUploadAsync(compRequest).ConfigureAwait(false);
+                    var completeUploadResponse = await Client.CompleteMultipartUploadAsync(compRequest).ConfigureAwait(false);
                 }
                 catch (Exception exception)
                 {
                     Log.PutError($"Exception occurred: {exception.Message}");
                     var abortMPURequest = new AbortMultipartUploadRequest
                     {
-                        BucketName = _bucketName,
+                        BucketName = BucketName,
                         Key = objectKey,
                         UploadId = multipartUploadResponse.UploadId,
                     };
-                    await _client.AbortMultipartUploadAsync(abortMPURequest).ConfigureAwait(false);
+                    await Client.AbortMultipartUploadAsync(abortMPURequest).ConfigureAwait(false);
                 }
             }
         }
@@ -121,10 +120,10 @@ namespace S3Backup
         {
             var deleteRequest = new DeleteObjectRequest
             {
-                BucketName = _bucketName,
+                BucketName = BucketName,
                 Key = key,
             };
-            var deleteResponse = await _client.DeleteObjectAsync(deleteRequest).ConfigureAwait(false);
+            var deleteResponse = await Client.DeleteObjectAsync(deleteRequest).ConfigureAwait(false);
             Log.PutOut($"{key} deleted from bucket");
         }
 
@@ -156,17 +155,16 @@ namespace S3Backup
             }
         }
 
-        private async Task<bool> BucketExists(string bucket)
+        private BucketName ConfirmBucketExistence(BucketName bucketName)
         {
-            if (await AmazonS3Util.DoesS3BucketExistAsync(_client, bucket).ConfigureAwait(false))
+            if (!AmazonS3Util.DoesS3BucketExistAsync(Client, bucketName).ConfigureAwait(false).GetAwaiter().GetResult())
             {
-                return true;
+                PutBucketToAmazon(bucketName).ConfigureAwait(false).GetAwaiter().GetResult();
             }
-            else
-            {
-                return false;
-            }
+
+            return bucketName;
         }
+
 
         private async Task PutBucketToAmazon(string bucket)
         {
@@ -174,18 +172,18 @@ namespace S3Backup
             {
                 BucketName = bucket,
             };
-            await _client.PutBucketAsync(putRequest).ConfigureAwait(false);
+            await Client.PutBucketAsync(putRequest).ConfigureAwait(false);
         }
 
         private async Task<List<S3Object>> GetS3ObjectsList(string prefix)
         {
             var request = new ListObjectsRequest
             {
-                BucketName = _bucketName,
+                BucketName = BucketName,
                 Prefix = prefix,
             };
 
-            var objects = (await _client.ListObjectsAsync(request).ConfigureAwait(false)).S3Objects;
+            var objects = (await Client.ListObjectsAsync(request).ConfigureAwait(false)).S3Objects;
             return objects;
         }
 
@@ -193,14 +191,14 @@ namespace S3Backup
         {
             try
             {
-                var deleteRequest = new DeleteObjectsRequest { BucketName = _bucketName };
+                var deleteRequest = new DeleteObjectsRequest { BucketName = BucketName };
                 foreach (var obj in objects)
                 {
                     deleteRequest.AddKey(obj.Key);
                     Log.PutOut($"{obj.Key} added to keyversion List for delete objects");
                 }
 
-                var deleteResponse = await _client.DeleteObjectsAsync(deleteRequest).ConfigureAwait(false);
+                var deleteResponse = await Client.DeleteObjectsAsync(deleteRequest).ConfigureAwait(false);
                 Log.PutOut($"{objects.Capacity} objects deleted");
             }
             catch (DeleteObjectsException exception)
