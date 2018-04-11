@@ -2,38 +2,30 @@
 {
     public sealed class Options
     {
-        private readonly bool _illegalArgument;
-        private readonly OptionCases _optionCases;
-        private readonly PartSize _partSize;
-        private readonly ParallelParts _parallelParts;
-        private readonly RecycleAge _recycleAge;
-        private readonly LocalPath _localPath;
-        private readonly RemotePath _remotePath;
-
         public Options(bool illegalArgument, OptionCases optionCases, LocalPath localPath, RemotePath remotePath, PartSize partSize, RecycleAge recycleAge, ParallelParts paralellParts)
         {
-            _illegalArgument = illegalArgument;
+            IllegalArgument = illegalArgument;
 
-            _optionCases = optionCases;
-            _localPath = localPath;
-            _remotePath = remotePath;
-            _partSize = partSize;
-            _recycleAge = recycleAge;
-            _parallelParts = paralellParts;
+            OptionCases = optionCases;
+            LocalPath = localPath;
+            RemotePath = remotePath;
+            PartSize = partSize;
+            RecycleAge = recycleAge;
+            ParallelParts = paralellParts;
         }
 
-        public bool IllegalArgument => _illegalArgument;
+        public bool IllegalArgument { get; }
 
-        public PartSize PartSize => _partSize;
+        public PartSize PartSize { get; }
 
-        public OptionCases OptionCases => _optionCases;
+        public OptionCases OptionCases { get; }
 
-        public ParallelParts ParallelParts => _parallelParts;
+        public ParallelParts ParallelParts { get; }
 
-        public RecycleAge RecycleAge => _recycleAge;
+        public RecycleAge RecycleAge { get; }
 
-        public LocalPath LocalPath => _localPath;
+        public LocalPath LocalPath { get; }
 
-        public RemotePath RemotePath => _remotePath;
+        public RemotePath RemotePath { get; }
     }
 }

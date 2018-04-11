@@ -2,17 +2,14 @@
 {
     public sealed class AmazonOptions
     {
-        private readonly ClientInformation _clientInformation;
-        private readonly BucketName _bucketName;
-
         public AmazonOptions(ClientInformation clientInformation, BucketName bucketName)
         {
-            _clientInformation = clientInformation;
-            _bucketName = bucketName;
+            ClientInformation = clientInformation;
+            BucketName = bucketName;
         }
 
-        public ClientInformation ClientInformation => _clientInformation;
+        public ClientInformation ClientInformation { get; }
 
-        public BucketName BucketName => _bucketName;
+        public BucketName BucketName { get; }
     }
 }
