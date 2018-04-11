@@ -1,4 +1,6 @@
-﻿namespace S3Backup
+﻿using System;
+
+namespace S3Backup
 {
     public sealed class Options
     {
@@ -7,11 +9,11 @@
             IllegalArgument = illegalArgument;
 
             OptionCases = optionCases;
-            LocalPath = localPath;
-            RemotePath = remotePath;
-            PartSize = partSize;
-            RecycleAge = recycleAge;
-            ParallelParts = paralellParts;
+            LocalPath = localPath ?? throw new ArgumentNullException(nameof(localPath));
+            RemotePath = remotePath ?? throw new ArgumentNullException(nameof(remotePath));
+            PartSize = partSize ?? throw new ArgumentNullException(nameof(partSize));
+            RecycleAge = recycleAge ?? throw new ArgumentNullException(nameof(recycleAge));
+            ParallelParts = paralellParts ?? throw new ArgumentNullException(nameof(paralellParts));
         }
 
         public bool IllegalArgument { get; }

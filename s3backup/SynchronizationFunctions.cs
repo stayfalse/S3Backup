@@ -17,7 +17,7 @@ namespace S3Backup
             _amazonFunctions = amazonFunctions;
         }
 
-        public Dictionary<string, FileInfo> GetFiles(string localPath)
+        public Dictionary<string, FileInfo> GetFiles(LocalPath localPath)
         {
             var files = new DirectoryInfo(localPath)
                 .GetFiles("*", SearchOption.AllDirectories);
@@ -30,7 +30,7 @@ namespace S3Backup
             return filesInfo;
         }
 
-        public async Task<bool> TryUploadMissingFiles(Dictionary<string, FileInfo> filesInfo, bool dryRun, string localPath, int partSize)
+        public async Task<bool> TryUploadMissingFiles(Dictionary<string, FileInfo> filesInfo, bool dryRun, LocalPath localPath, PartSize partSize)
         {
             if (!dryRun)
             {
@@ -47,7 +47,7 @@ namespace S3Backup
             }
         }
 
-        public async Task<bool> TryUploadMismatchedFile(FileInfo fileInfo, bool dryRun, string localPath, int partSize)
+        public async Task<bool> TryUploadMismatchedFile(FileInfo fileInfo, bool dryRun, LocalPath localPath, PartSize partSize)
         {
             if (!dryRun)
             {
@@ -62,6 +62,11 @@ namespace S3Backup
 
         public async Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, DateTime threshold)
         {
+            if (s3Object is null)
+            {
+                throw new ArgumentNullException(nameof(s3Object));
+            }
+
             if (!dryRun && s3Object.LastModified < threshold)
             {
                 await _amazonFunctions.DeleteObject(s3Object.Key).ConfigureAwait(false);
@@ -75,33 +80,53 @@ namespace S3Backup
 
         public bool EqualSize(S3ObjectInfo s3Object, FileInfo fileInfo)
         {
+            if (s3Object is null)
+            {
+                throw new ArgumentNullException(nameof(s3Object));
+            }
+
+            if (fileInfo is null)
+            {
+                throw new ArgumentNullException(nameof(fileInfo));
+            }
+
             return s3Object.Size == fileInfo.Length;
         }
 
-        public bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo, int partSize)
+        public bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo, PartSize partSize)
         {
+            if (s3Object is null)
+            {
+                throw new ArgumentNullException(nameof(s3Object));
+            }
+
             return string.Equals(s3Object.ETag, ComputeLocalETag(fileInfo, partSize), StringComparison.Ordinal);
         }
 
-        private static string ComputeLocalETag(FileInfo file, int partSize)
+        private static string ComputeLocalETag(FileInfo fileInfo, int partSize)
         {
+            if (fileInfo is null)
+            {
+                throw new ArgumentNullException(nameof(fileInfo));
+            }
+
             var localETag = "";
             using (var md5 = MD5.Create())
             {
-                var br = new BinaryReader(new FileStream(file.FullName, FileMode.Open));
+                var br = new BinaryReader(new FileStream(fileInfo.FullName, FileMode.Open));
                 var sumIndex = 0;
                 var parts = 0;
                 var hashLength = md5.HashSize / 8;
-                var n = ((file.Length / partSize) * hashLength) + ((file.Length % partSize != 0) ? hashLength : 0);
+                var n = ((fileInfo.Length / partSize) * hashLength) + ((fileInfo.Length % partSize != 0) ? hashLength : 0);
                 var sum = new byte[n];
-                var a = (file.Length > partSize) ? partSize : (int)file.Length;
+                var a = (fileInfo.Length > partSize) ? partSize : (int)fileInfo.Length;
                 while (sumIndex < sum.Length)
                 {
                     md5.ComputeHash(br.ReadBytes(a)).CopyTo(sum, sumIndex);
                     parts++;
-                    if (parts * partSize > file.Length)
+                    if (parts * partSize > fileInfo.Length)
                     {
-                        a = (int)file.Length % partSize;
+                        a = (int)fileInfo.Length % partSize;
                     }
 
                     sumIndex += hashLength;

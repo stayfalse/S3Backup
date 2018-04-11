@@ -7,16 +7,16 @@ namespace S3Backup
 {
     public interface ISynchronizationFunctions
     {
-        Dictionary<string, FileInfo> GetFiles(string localPath);
+        Dictionary<string, FileInfo> GetFiles(LocalPath localPath);
 
-        Task<bool> TryUploadMissingFiles(Dictionary<string, FileInfo> filesInfo, bool dryRun, string localPath, int partSize);
+        Task<bool> TryUploadMissingFiles(Dictionary<string, FileInfo> filesInfo, bool dryRun, LocalPath localPath, PartSize partSize);
 
-        Task<bool> TryUploadMismatchedFile(FileInfo fileInfo, bool dryRun, string localPath, int partSize);
+        Task<bool> TryUploadMismatchedFile(FileInfo fileInfo, bool dryRun, LocalPath localPath, PartSize partSize);
 
         Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, DateTime threshold);
 
         bool EqualSize(S3ObjectInfo s3Object, FileInfo fileInfo);
 
-        bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo, int partSize);
+        bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo, PartSize partSize);
     }
 }

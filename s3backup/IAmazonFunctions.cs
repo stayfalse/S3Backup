@@ -6,12 +6,12 @@ namespace S3Backup
 {
     public interface IAmazonFunctions
     {
-        Task<IEnumerable<S3ObjectInfo>> GetObjectsList(string prefix);
+        Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix);
 
-        Task UploadObjectToBucket(FileInfo file, string localPath, int partSize);
+        Task UploadObjectToBucket(FileInfo file, LocalPath localPath, PartSize partSize);
 
         Task DeleteObject(string key);
 
-        Task Purge(string prefix);
+        Task Purge(RemotePath prefix);
     }
 }

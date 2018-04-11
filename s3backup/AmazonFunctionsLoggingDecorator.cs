@@ -14,13 +14,13 @@ namespace S3Backup
             _amazonFunctions = amazonFunctions ?? throw new ArgumentNullException(nameof(amazonFunctions));
         }
 
-        public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(string prefix)
+        public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
         {
             Log.PutOut($"Receive AmazonS3ObjectsList (RemotePath: {prefix})");
             return await _amazonFunctions.GetObjectsList(prefix).ConfigureAwait(false);
         }
 
-        public async Task UploadObjectToBucket(FileInfo file, string localPath, int partSize)
+        public async Task UploadObjectToBucket(FileInfo file, LocalPath localPath, PartSize partSize)
         {
             Log.PutOut($"Upload {file.Name} to bucket");
             await _amazonFunctions.UploadObjectToBucket(file, localPath, partSize).ConfigureAwait(false);
@@ -33,7 +33,7 @@ namespace S3Backup
             await _amazonFunctions.DeleteObject(key).ConfigureAwait(false);
         }
 
-        public async Task Purge(string prefix)
+        public async Task Purge(RemotePath prefix)
         {
             Log.PutOut($"Purge bucket with remote path {prefix}");
             await _amazonFunctions.Purge(prefix).ConfigureAwait(false);

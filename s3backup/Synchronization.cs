@@ -18,14 +18,9 @@ namespace S3Backup
                 throw new ArgumentNullException(nameof(optionsSource));
             }
 
-            if (amazonFunctions is null)
-            {
-                throw new ArgumentNullException(nameof(amazonFunctions));
-            }
-
             _options = optionsSource.Options;
-            _amazonFunctions = amazonFunctions;
-            _synchronizationFunctions = synchronizationFunctions;
+            _amazonFunctions = amazonFunctions ?? throw new ArgumentNullException(nameof(amazonFunctions));
+            _synchronizationFunctions = synchronizationFunctions ?? throw new ArgumentNullException(nameof(synchronizationFunctions));
         }
 
         public async Task Synchronize()

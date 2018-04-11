@@ -7,5 +7,7 @@
             : base(AddressesOption.Initialize(value, maxLength, isValid))
         {
         }
+
+        public int Length => Value.Length;
     }
 }

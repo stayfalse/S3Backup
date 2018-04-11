@@ -16,6 +16,11 @@ namespace S3Backup
 
         public UseAmazon(IOptionsSource optionsSource)
         {
+            if (optionsSource is null)
+            {
+                throw new ArgumentNullException(nameof(optionsSource));
+            }
+
             var options = optionsSource.AmazonOptions;
             _client = new Lazy<AmazonS3Client>(() => GetClient(options.ClientInformation));
             _bucketName = new Lazy<BucketName>(() => ConfirmBucketExistence(options.BucketName));
@@ -25,7 +30,7 @@ namespace S3Backup
 
         private AmazonS3Client Client => _client.Value;
 
-        public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(string prefix)
+        public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
         {
             var list = new List<S3ObjectInfo>();
             foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
@@ -37,18 +42,23 @@ namespace S3Backup
             return list.AsReadOnly();
         }
 
-        public async Task UploadObjectToBucket(FileInfo file, string localPath, int partSize)
+        public async Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
         {
-            var objectKey = file.FullName
+            if (fileInfo is null)
+            {
+                throw new ArgumentNullException(nameof(fileInfo));
+            }
+
+            var objectKey = fileInfo.FullName
                 .Remove(0, localPath.Length + 1)
                 .Replace('\\', '/');
-            if (file.Length <= partSize)
+            if (fileInfo.Length <= partSize)
             {
                 var putObjectRequest = new PutObjectRequest
                 {
                     BucketName = BucketName,
                     Key = objectKey,
-                    FilePath = file.FullName,
+                    FilePath = fileInfo.FullName,
                 };
                 try
                 {
@@ -68,11 +78,11 @@ namespace S3Backup
                 };
 
                 var multipartUploadResponse = await Client.InitiateMultipartUploadAsync(multipartUploadRequest).ConfigureAwait(false);
-                var a = (file.Length > partSize) ? partSize : (int)file.Length;
+                var a = (fileInfo.Length > partSize) ? partSize : (int)fileInfo.Length;
                 try
                 {
                     var list = new List<Task<UploadPartResponse>>();
-                    for (var i = 0; partSize * i < file.Length; i++)
+                    for (var i = 0; partSize * i < fileInfo.Length; i++)
                     {
                         var upload = new UploadPartRequest()
                         {
@@ -82,11 +92,11 @@ namespace S3Backup
                             PartNumber = i + 1,
                             PartSize = a,
                             FilePosition = partSize * i,
-                            FilePath = file.FullName,
+                            FilePath = fileInfo.FullName,
                         };
-                        if ((i + 1) * partSize > file.Length)
+                        if ((i + 1) * partSize > fileInfo.Length)
                         {
-                            a = (int)file.Length % partSize;
+                            a = (int)fileInfo.Length % partSize;
                         }
 
                         list.Add(Client.UploadPartAsync(upload));
@@ -127,7 +137,7 @@ namespace S3Backup
             Log.PutOut($"{key} deleted from bucket");
         }
 
-        public async Task Purge(string prefix)
+        public async Task Purge(RemotePath prefix)
         {
             var deleteTasks = new List<Task>();
             foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
@@ -140,6 +150,11 @@ namespace S3Backup
 
         private AmazonS3Client GetClient(ClientInformation config)
         {
+            if (config is null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
             try
             {
                 var s3Config = new AmazonS3Config
@@ -165,17 +180,16 @@ namespace S3Backup
             return bucketName;
         }
 
-
-        private async Task PutBucketToAmazon(string bucket)
+        private async Task PutBucketToAmazon(BucketName bucketName)
         {
             var putRequest = new PutBucketRequest
             {
-                BucketName = bucket,
+                BucketName = bucketName,
             };
             await Client.PutBucketAsync(putRequest).ConfigureAwait(false);
         }
 
-        private async Task<List<S3Object>> GetS3ObjectsList(string prefix)
+        private async Task<List<S3Object>> GetS3ObjectsList(RemotePath prefix)
         {
             var request = new ListObjectsRequest
             {
