@@ -3,7 +3,7 @@
 namespace S3Backup
 {
     [Flags]
-    public enum OptionCases
+    public enum OptionCases : ushort
     {
         None,
         DryRun = 1,
