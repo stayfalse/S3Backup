@@ -4,7 +4,6 @@ using S3Backup.Components;
 
 namespace S3Backup
 {
-
     public sealed class RecycleAge : RealNumberOption<RecycleAge>
     {
         public const int MinValue = 1;

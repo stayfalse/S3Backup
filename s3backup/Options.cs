@@ -10,9 +10,9 @@
         private readonly LocalPath _localPath;
         private readonly RemotePath _remotePath;
 
-        public Options(bool illegalArgumet, OptionCases optionCases, LocalPath localPath, RemotePath remotePath, PartSize partSize, RecycleAge recycleAge, ParallelParts paralellParts)
+        public Options(bool illegalArgument, OptionCases optionCases, LocalPath localPath, RemotePath remotePath, PartSize partSize, RecycleAge recycleAge, ParallelParts paralellParts)
         {
-            _illegalArgument = illegalArgumet;
+            _illegalArgument = illegalArgument;
 
             _optionCases = optionCases;
             _localPath = localPath;

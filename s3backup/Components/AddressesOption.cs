@@ -2,7 +2,7 @@
 
 namespace S3Backup.Components
 {
-    public static class AdressesOption
+    public static class AddressesOption
     {
         public const int AbsoluteMaxLength = 100;
 
@@ -19,15 +19,6 @@ namespace S3Backup.Components
             }
 
             return value;
-        }
-    }
-
-    public abstract class AdresssOption<TDomain> : EquatableDomain<TDomain, string>
-    where TDomain : EquatableDomain<TDomain, string>
-    {
-        protected AdresssOption(string value, int maxLength = AdressesOption.AbsoluteMaxLength, bool isValid = true)
-            : base(AdressesOption.Initialize(value, maxLength, isValid))
-        {
         }
     }
 }

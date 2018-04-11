@@ -2,14 +2,13 @@
 
 namespace S3Backup.Composition
 {
-    public class OptionsSource : IOptionsSource
+    public sealed class OptionsSource : IOptionsSource
     {
         private readonly Lazy<(Options, AmazonOptions)> _lazyOptions;
 
         public OptionsSource(string[] args, IArgsParser parser)
         {
             _lazyOptions = new Lazy<(Options, AmazonOptions)>(() => parser.Parse(args));
-
         }
 
         public Options Options => _lazyOptions.Value.Item1;

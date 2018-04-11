@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace S3Backup.Composition
 {
-    public class ArgsParser : IArgsParser
+    public sealed class ArgsParser : IArgsParser
     {
         private string _configFile;
 

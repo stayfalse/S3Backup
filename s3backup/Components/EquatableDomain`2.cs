@@ -2,7 +2,6 @@
 
 namespace S3Backup.Components
 {
-
     public class EquatableDomain<TDomain, TValue> : Domain<TDomain, TValue>, IEquatable<TDomain>
         where TDomain : EquatableDomain<TDomain, TValue>
         where TValue : IEquatable<TValue>

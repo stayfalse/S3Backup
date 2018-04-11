@@ -1,11 +1,8 @@
-﻿using System;
-
-using S3Backup.Components;
+﻿using S3Backup.Components;
 
 namespace S3Backup
 {
-
-    public sealed class RemotePath : AdresssOption<RemotePath>
+    public sealed class RemotePath : AddressesOption<RemotePath>
     {
         public const int MaxLength = 100;
 

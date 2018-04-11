@@ -1,6 +1,4 @@
-﻿using System;
-
-using S3Backup.Components;
+﻿using S3Backup.Components;
 
 namespace S3Backup
 {

@@ -1,10 +1,7 @@
-﻿using System;
-
-using S3Backup.Components;
+﻿using S3Backup.Components;
 
 namespace S3Backup
 {
-
     public sealed class ParallelParts : RealNumberOption<ParallelParts>
     {
         public const int MinValue = 1;

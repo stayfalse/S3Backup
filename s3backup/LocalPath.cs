@@ -1,11 +1,8 @@
-﻿using System;
-
-using S3Backup.Components;
+﻿using S3Backup.Components;
 
 namespace S3Backup
 {
-
-    public sealed class LocalPath : AdresssOption<LocalPath>
+    public sealed class LocalPath : AddressesOption<LocalPath>
     {
         public const int MaxLength = 100;
 
