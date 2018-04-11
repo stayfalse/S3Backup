@@ -2,43 +2,38 @@
 {
     public sealed class Options
     {
+        private readonly bool _illegalArgument;
+        private readonly OptionCases _optionCases;
+        private readonly PartSize _partSize;
+        private readonly ParallelParts _parallelParts;
+        private readonly RecycleAge _recycleAge;
+        private readonly LocalPath _localPath;
+        private readonly RemotePath _remotePath;
+
         public Options(bool illegalArgumet, OptionCases optionCases, LocalPath localPath, RemotePath remotePath, PartSize partSize, RecycleAge recycleAge, ParallelParts paralellParts)
         {
-            IllegalArgument = illegalArgumet;
+            _illegalArgument = illegalArgumet;
 
-            OptionCases = optionCases;
-            LocalPath = localPath;
-            RemotePath = remotePath;
-            PartSize = partSize;
-            RecycleAge = recycleAge;
-            ParallelParts = paralellParts;
+            _optionCases = optionCases;
+            _localPath = localPath;
+            _remotePath = remotePath;
+            _partSize = partSize;
+            _recycleAge = recycleAge;
+            _parallelParts = paralellParts;
         }
 
-        public bool IllegalArgument { get; private set; }
+        public bool IllegalArgument => _illegalArgument;
 
-        public PartSize PartSize { get; private set; }
+        public PartSize PartSize => _partSize;
 
-        public OptionCases OptionCases { get; private set; }
+        public OptionCases OptionCases => _optionCases;
 
-        public ParallelParts ParallelParts { get; private set; }
+        public ParallelParts ParallelParts => _parallelParts;
 
-        public RecycleAge RecycleAge { get; private set; }
+        public RecycleAge RecycleAge => _recycleAge;
 
-        public LocalPath LocalPath { get; private set; }
+        public LocalPath LocalPath => _localPath;
 
-        public RemotePath RemotePath { get; private set; }
-    }
-
-    public sealed class AmazonOptions
-    {
-        public AmazonOptions(ClientInformation clientInformation, BucketName bucketName)
-        {
-            ClientInformation = clientInformation;
-            BucketName = bucketName;
-        }
-
-        public ClientInformation ClientInformation { get; private set; }
-
-        public BucketName BucketName { get; private set; }
+        public RemotePath RemotePath => _remotePath;
     }
 }
