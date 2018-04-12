@@ -25,12 +25,6 @@ namespace S3Backup
 
         public async Task Synchronize()
         {
-            if (_options.IllegalArgument)
-            {
-                Log.PutOut($"Synchronization can not be started in case of incorrect command line arguments");
-                return;
-            }
-
             Log.PutOut($"Synchronization started");
 
             if (((_options.OptionCases & OptionCases.DryRun) != OptionCases.DryRun) && _options.OptionCases.HasFlag(OptionCases.Purge))
