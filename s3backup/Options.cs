@@ -4,7 +4,7 @@ namespace S3Backup
 {
     public sealed class Options
     {
-        public Options(bool illegalArgument, OptionCases optionCases, LocalPath localPath, RemotePath remotePath, PartSize partSize, RecycleAge recycleAge, ParallelParts paralellParts)
+        public Options(bool illegalArgument, OptionCases optionCases, LocalPath localPath, RemotePath remotePath, PartSize partSize, ThresholdDate threshold, ParallelParts paralellParts)
         {
             IllegalArgument = illegalArgument;
 
@@ -12,7 +12,7 @@ namespace S3Backup
             LocalPath = localPath ?? throw new ArgumentNullException(nameof(localPath));
             RemotePath = remotePath ?? throw new ArgumentNullException(nameof(remotePath));
             PartSize = partSize ?? throw new ArgumentNullException(nameof(partSize));
-            RecycleAge = recycleAge ?? throw new ArgumentNullException(nameof(recycleAge));
+            ThresholdDate = threshold ?? throw new ArgumentNullException(nameof(threshold));
             ParallelParts = paralellParts ?? throw new ArgumentNullException(nameof(paralellParts));
         }
 
@@ -24,7 +24,7 @@ namespace S3Backup
 
         public ParallelParts ParallelParts { get; }
 
-        public RecycleAge RecycleAge { get; }
+        public ThresholdDate ThresholdDate { get; }
 
         public LocalPath LocalPath { get; }
 

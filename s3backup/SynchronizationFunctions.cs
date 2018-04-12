@@ -60,7 +60,7 @@ namespace S3Backup
             }
         }
 
-        public async Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, DateTime threshold)
+        public async Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, ThresholdDate threshold)
         {
             if (s3Object is null)
             {

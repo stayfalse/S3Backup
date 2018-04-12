@@ -71,7 +71,7 @@ namespace S3Backup
                 else
                 {
                     await _synchronizationFunctions
-                        .TryDeleteMismatchedObject(s3Object, _options.OptionCases.HasFlag(OptionCases.DryRun), RecycleAge.ParseToDateTime(_options.RecycleAge))
+                        .TryDeleteMismatchedObject(s3Object, _options.OptionCases.HasFlag(OptionCases.DryRun), _options.ThresholdDate)
                         .ConfigureAwait(false);
                 }
             }

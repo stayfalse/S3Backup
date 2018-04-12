@@ -15,6 +15,8 @@ namespace S3Backup.Composition
 
         private int _partSize;
 
+        private int _recycleAge;
+
         private PartSize PartSize
         {
             get => (_partSize == 0) ? new PartSize((int)Math.Pow(2, 20) * 250) : new PartSize((int)Math.Pow(2, 20) * _partSize);
@@ -27,7 +29,7 @@ namespace S3Backup.Composition
             set => _parallelParts = value;
         }
 
-        private RecycleAge RecycleAge { get; set; }
+        private ThresholdDate Threshold => new ThresholdDate((_recycleAge != 0) ? DateTime.Now.Subtract(new TimeSpan(_recycleAge, 0, 0, 0)) : default);
 
         private LocalPath LocalPath { get; set; }
 
@@ -72,7 +74,7 @@ namespace S3Backup.Composition
             {
                 if (int.TryParse(recycleAgeOption.Value(), out var valueRA) && recycleAgeOption.HasValue())
                 {
-                    RecycleAge = new RecycleAge(valueRA);
+                    _recycleAge = valueRA;
                 }
                 else
                 {
@@ -109,7 +111,7 @@ namespace S3Backup.Composition
                 }
             }
 
-            return (new Options(_illegalArgument, optionCases, LocalPath, RemotePath, PartSize, RecycleAge, ParallelParts),
+            return (new Options(_illegalArgument, optionCases, LocalPath, RemotePath, PartSize, Threshold, ParallelParts),
                 new AmazonOptions(ClientInformation, BucketName));
         }
 

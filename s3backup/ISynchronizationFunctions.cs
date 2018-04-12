@@ -13,7 +13,7 @@ namespace S3Backup
 
         Task<bool> TryUploadMismatchedFile(FileInfo fileInfo, bool dryRun, LocalPath localPath, PartSize partSize);
 
-        Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, DateTime threshold);
+        Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, ThresholdDate threshold);
 
         bool EqualSize(S3ObjectInfo s3Object, FileInfo fileInfo);
 
