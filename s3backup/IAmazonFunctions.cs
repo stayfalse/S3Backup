@@ -8,7 +8,9 @@ namespace S3Backup
     {
         Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix);
 
-        Task UploadObjectToBucket(FileInfo file, LocalPath localPath, PartSize partSize);
+        Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize);
+
+        Task UploadObjects(ICollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize);
 
         Task DeleteObject(string key);
 

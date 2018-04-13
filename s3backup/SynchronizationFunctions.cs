@@ -14,7 +14,7 @@ namespace S3Backup
 
         public SynchronizationFunctions(IAmazonFunctions amazonFunctions)
         {
-            _amazonFunctions = amazonFunctions;
+            _amazonFunctions = amazonFunctions ?? throw new ArgumentNullException(nameof(amazonFunctions));
         }
 
         public Dictionary<string, FileInfo> GetFiles(LocalPath localPath)

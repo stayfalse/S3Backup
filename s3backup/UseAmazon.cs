@@ -44,7 +44,6 @@ namespace S3Backup
 
         public async Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
         {
-            await Initialize().ConfigureAwait(false);
             if (fileInfo is null)
             {
                 throw new ArgumentNullException(nameof(fileInfo));
@@ -59,6 +58,8 @@ namespace S3Backup
             {
                 throw new ArgumentNullException(nameof(partSize));
             }
+
+            await Initialize().ConfigureAwait(false);
 
             var objectKey = fileInfo.FullName
                 .Remove(0, localPath.Length + 1)
@@ -82,58 +83,15 @@ namespace S3Backup
             }
             else
             {
-                var multipartUploadRequest = new InitiateMultipartUploadRequest()
-                {
-                    BucketName = _bucketName,
-                    Key = objectKey,
-                };
+                await MultipartUploadObject(fileInfo, objectKey, partSize).ConfigureAwait(false);
+            }
+        }
 
-                var multipartUploadResponse = await Client.InitiateMultipartUploadAsync(multipartUploadRequest).ConfigureAwait(false);
-                var a = (fileInfo.Length > partSize) ? partSize : (int)fileInfo.Length;
-                try
-                {
-                    var list = new List<Task<UploadPartResponse>>();
-                    for (var i = 0; partSize * i < fileInfo.Length; i++)
-                    {
-                        var upload = new UploadPartRequest()
-                        {
-                            BucketName = _bucketName,
-                            Key = objectKey,
-                            UploadId = multipartUploadResponse.UploadId,
-                            PartNumber = i + 1,
-                            PartSize = a,
-                            FilePosition = partSize * i,
-                            FilePath = fileInfo.FullName,
-                        };
-                        if ((i + 1) * partSize > fileInfo.Length)
-                        {
-                            a = (int)fileInfo.Length % partSize;
-                        }
-
-                        list.Add(Client.UploadPartAsync(upload));
-                    }
-
-                    var partResponses = Task.WhenAll(list);
-                    var compRequest = new CompleteMultipartUploadRequest
-                    {
-                        BucketName = _bucketName,
-                        Key = objectKey,
-                        UploadId = multipartUploadResponse.UploadId,
-                    };
-                    compRequest.AddPartETags(await partResponses.ConfigureAwait(false));
-                    var completeUploadResponse = await Client.CompleteMultipartUploadAsync(compRequest).ConfigureAwait(false);
-                }
-                catch (Exception exception)
-                {
-                    Log.PutError($"Exception occurred: {exception.Message}");
-                    var abortMPURequest = new AbortMultipartUploadRequest
-                    {
-                        BucketName = _bucketName,
-                        Key = objectKey,
-                        UploadId = multipartUploadResponse.UploadId,
-                    };
-                    await Client.AbortMultipartUploadAsync(abortMPURequest).ConfigureAwait(false);
-                }
+        public async Task UploadObjects(ICollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
+        {
+            foreach (var fileInfo in filesInfo)
+            {
+                await UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
             }
         }
 
@@ -212,6 +170,74 @@ namespace S3Backup
 
             var objects = (await Client.ListObjectsAsync(request).ConfigureAwait(false)).S3Objects;
             return objects;
+        }
+
+        private async Task MultipartUploadObject(FileInfo fileInfo, string objectKey, PartSize partSize)
+        {
+            if (fileInfo is null)
+            {
+                throw new ArgumentNullException(nameof(fileInfo));
+            }
+
+            if (partSize is null)
+            {
+                throw new ArgumentNullException(nameof(partSize));
+            }
+
+            var multipartUploadRequest = new InitiateMultipartUploadRequest()
+            {
+                BucketName = _bucketName,
+                Key = objectKey,
+            };
+
+            await Initialize().ConfigureAwait(false);
+
+            var multipartUploadResponse = await Client.InitiateMultipartUploadAsync(multipartUploadRequest).ConfigureAwait(false);
+            var a = (fileInfo.Length > partSize) ? partSize : (int)fileInfo.Length;
+            try
+            {
+                var list = new List<Task<UploadPartResponse>>();
+                for (var i = 0; partSize * i < fileInfo.Length; i++)
+                {
+                    var upload = new UploadPartRequest()
+                    {
+                        BucketName = _bucketName,
+                        Key = objectKey,
+                        UploadId = multipartUploadResponse.UploadId,
+                        PartNumber = i + 1,
+                        PartSize = a,
+                        FilePosition = partSize * i,
+                        FilePath = fileInfo.FullName,
+                    };
+                    if ((i + 1) * partSize > fileInfo.Length)
+                    {
+                        a = (int)fileInfo.Length % partSize;
+                    }
+
+                    list.Add(Client.UploadPartAsync(upload));
+                }
+
+                var partResponses = Task.WhenAll(list);
+                var compRequest = new CompleteMultipartUploadRequest
+                {
+                    BucketName = _bucketName,
+                    Key = objectKey,
+                    UploadId = multipartUploadResponse.UploadId,
+                };
+                compRequest.AddPartETags(await partResponses.ConfigureAwait(false));
+                var completeUploadResponse = await Client.CompleteMultipartUploadAsync(compRequest).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                Log.PutError($"Exception occurred: {exception.Message}");
+                var abortMPURequest = new AbortMultipartUploadRequest
+                {
+                    BucketName = _bucketName,
+                    Key = objectKey,
+                    UploadId = multipartUploadResponse.UploadId,
+                };
+                await Client.AbortMultipartUploadAsync(abortMPURequest).ConfigureAwait(false);
+            }
         }
 
         private async Task DeleteObjects(List<S3Object> objects) // does not work, "Access denied" exception
