@@ -50,6 +50,16 @@ namespace S3Backup
                 throw new ArgumentNullException(nameof(fileInfo));
             }
 
+            if (localPath is null)
+            {
+                throw new ArgumentNullException(nameof(localPath));
+            }
+
+            if (partSize is null)
+            {
+                throw new ArgumentNullException(nameof(partSize));
+            }
+
             var objectKey = fileInfo.FullName
                 .Remove(0, localPath.Length + 1)
                 .Replace('\\', '/');
@@ -188,6 +198,11 @@ namespace S3Backup
 
         private async Task<List<S3Object>> GetS3ObjectsList(RemotePath prefix)
         {
+            if (prefix is null)
+            {
+                throw new ArgumentNullException(nameof(prefix));
+            }
+
             await Initialize().ConfigureAwait(false);
             var request = new ListObjectsRequest
             {
@@ -201,6 +216,11 @@ namespace S3Backup
 
         private async Task DeleteObjects(List<S3Object> objects) // does not work, "Access denied" exception
         {
+            if (objects is null)
+            {
+                throw new ArgumentNullException(nameof(objects));
+            }
+
             await Initialize().ConfigureAwait(false);
             try
             {

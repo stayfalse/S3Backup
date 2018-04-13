@@ -7,7 +7,7 @@ namespace S3Backup
 {
     public class Synchronization
     {
-        private readonly Options _options; // should set only usable options
+        private readonly Options _options;
         private readonly IAmazonFunctions _amazonFunctions;
         private readonly ISynchronizationFunctions _synchronizationFunctions;
 
