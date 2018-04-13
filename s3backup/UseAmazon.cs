@@ -87,14 +87,6 @@ namespace S3Backup
             }
         }
 
-        public async Task UploadObjects(ICollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
-        {
-            foreach (var fileInfo in filesInfo)
-            {
-                await UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
-            }
-        }
-
         public async Task DeleteObject(string key)
         {
             await Initialize().ConfigureAwait(false);

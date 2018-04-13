@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 
 namespace S3Backup
 {
-    public class Synchronization
+    public class Synchronization : ISynchronization
     {
         private readonly Options _options;
-        private readonly IAmazonFunctions _amazonFunctions;
+        private readonly IAmazonFunctionsForSynchronization _amazonFunctions;
         private readonly ISynchronizationFunctions _synchronizationFunctions;
 
-        public Synchronization(IOptionsSource optionsSource, IAmazonFunctions amazonFunctions, ISynchronizationFunctions synchronizationFunctions)
+        public Synchronization(IOptionsSource optionsSource, IAmazonFunctionsForSynchronization amazonFunctions, ISynchronizationFunctions synchronizationFunctions)
         {
             if (optionsSource is null)
             {
@@ -25,80 +25,62 @@ namespace S3Backup
 
         public async Task Synchronize()
         {
-            Log.PutOut($"Synchronization started");
-
-            if (((_options.OptionCases & OptionCases.DryRun) != OptionCases.DryRun) && _options.OptionCases.HasFlag(OptionCases.Purge))
+            if ((_options.OptionCases & OptionCases.Purge) != OptionCases.Purge)
             {
                 await _amazonFunctions.Purge(_options.RemotePath).ConfigureAwait(false);
             }
 
             var objects = await _amazonFunctions.GetObjectsList(_options.RemotePath).ConfigureAwait(false);
-            var filesInfo = _synchronizationFunctions.GetFiles(_options.LocalPath);
 
-            filesInfo = await CompareFilesAndObjectsLists(filesInfo, objects).ConfigureAwait(false);
+            var filesInfo = await CompareLocalFilesAndS3Objects(objects).ConfigureAwait(false);
 
-            await _synchronizationFunctions
-                .TryUploadMissingFiles(filesInfo, _options.OptionCases.HasFlag(OptionCases.DryRun), _options.LocalPath, _options.PartSize)
+            await _amazonFunctions
+                .UploadObjects(filesInfo, _options.LocalPath, _options.PartSize)
                 .ConfigureAwait(false);
-
-            Log.PutOut($"{((_options.OptionCases & OptionCases.DryRun) == OptionCases.DryRun ? "DryRun" : "")} Synchronization completed");
         }
 
-        private async Task<Dictionary<string, FileInfo>> CompareFilesAndObjectsLists(Dictionary<string, FileInfo> filesInfo, IEnumerable<S3ObjectInfo> objects)
+        public async Task<IEnumerable<FileInfo>> CompareLocalFilesAndS3Objects(IEnumerable<S3ObjectInfo> objects)
         {
+            var filesInfo = _synchronizationFunctions.GetFiles(_options.LocalPath);
             foreach (var s3Object in objects)
             {
                 if (filesInfo.TryGetValue(s3Object.Key, out var fileInfo))
                 {
                     filesInfo.Remove(fileInfo.Name);
-                    if (CompareFileAndObject(fileInfo, s3Object))
+                    if (!FileEqualsObject(fileInfo, s3Object))
                     {
-                        continue;
-                    }
-                    else
-                    {
-                        await _synchronizationFunctions
-                            .TryUploadMismatchedFile(fileInfo, _options.OptionCases.HasFlag(OptionCases.DryRun), _options.LocalPath, _options.PartSize)
-                            .ConfigureAwait(false);
+                        await _amazonFunctions
+                           .UploadObjectToBucket(fileInfo, _options.LocalPath, _options.PartSize)
+                           .ConfigureAwait(false);
                     }
                 }
                 else
                 {
-                    await _synchronizationFunctions
-                        .TryDeleteMismatchedObject(s3Object, _options.OptionCases.HasFlag(OptionCases.DryRun), _options.ThresholdDate)
-                        .ConfigureAwait(false);
+                    if (s3Object.LastModified < _options.ThresholdDate)
+                    {
+                        await _amazonFunctions.DeleteObject(s3Object.Key).ConfigureAwait(false);
+                    }
                 }
             }
 
-            return filesInfo;
+            return filesInfo.Values;
         }
 
-        private bool CompareFileAndObject(FileInfo fileInfo, S3ObjectInfo s3Object)
+        public bool FileEqualsObject(FileInfo fileInfo, S3ObjectInfo s3Object)
         {
             Log.PutOut($"Comparation object {s3Object.Key} and file {fileInfo.Name} started");
 
             if (_synchronizationFunctions.EqualSize(s3Object, fileInfo))
             {
-                if (_options.OptionCases.HasFlag(OptionCases.SizeOnly))
+                if ((_options.OptionCases & OptionCases.SizeOnly) != OptionCases.SizeOnly)
                 {
-                    return true;
+                    return _synchronizationFunctions.EqualETag(s3Object, fileInfo, _options.PartSize);
                 }
-                else
-                {
-                    if (_synchronizationFunctions.EqualETag(s3Object, fileInfo, _options.PartSize))
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
+
+                return true;
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
     }
 }

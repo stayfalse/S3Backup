@@ -30,17 +30,24 @@ namespace S3Backup
         {
             if (!_dryRun)
             {
-                await _amazonFunctions.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
+                await _amazonFunctions
+                    .UploadObjectToBucket(fileInfo, localPath, partSize)
+                    .ConfigureAwait(false);
             }
 
             return !_dryRun;
         }
 
-        public async Task<bool> TryUploadObjects(ICollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
+        public async Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
         {
             if (!_dryRun)
             {
-                await _amazonFunctions.UploadObjects(filesInfo, localPath, partSize).ConfigureAwait(false);
+                foreach (var fileInfo in filesInfo)
+                {
+                    await _amazonFunctions
+                        .UploadObjectToBucket(fileInfo, localPath, partSize)
+                        .ConfigureAwait(false);
+                }
             }
 
             return !_dryRun;

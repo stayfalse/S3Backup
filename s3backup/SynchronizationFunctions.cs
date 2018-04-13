@@ -10,13 +10,6 @@ namespace S3Backup
 {
     public class SynchronizationFunctions : ISynchronizationFunctions
     {
-        private readonly IAmazonFunctions _amazonFunctions;
-
-        public SynchronizationFunctions(IAmazonFunctions amazonFunctions)
-        {
-            _amazonFunctions = amazonFunctions ?? throw new ArgumentNullException(nameof(amazonFunctions));
-        }
-
         public Dictionary<string, FileInfo> GetFiles(LocalPath localPath)
         {
             var files = new DirectoryInfo(localPath)
@@ -28,54 +21,6 @@ namespace S3Backup
             }
 
             return filesInfo;
-        }
-
-        public async Task<bool> TryUploadMissingFiles(Dictionary<string, FileInfo> filesInfo, bool dryRun, LocalPath localPath, PartSize partSize)
-        {
-            if (!dryRun)
-            {
-                foreach (var fileInfo in filesInfo)
-                {
-                    await _amazonFunctions.UploadObjectToBucket(fileInfo.Value, localPath, partSize).ConfigureAwait(false);
-                }
-
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public async Task<bool> TryUploadMismatchedFile(FileInfo fileInfo, bool dryRun, LocalPath localPath, PartSize partSize)
-        {
-            if (!dryRun)
-            {
-                await _amazonFunctions.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public async Task<bool> TryDeleteMismatchedObject(S3ObjectInfo s3Object, bool dryRun, ThresholdDate threshold)
-        {
-            if (s3Object is null)
-            {
-                throw new ArgumentNullException(nameof(s3Object));
-            }
-
-            if (!dryRun && s3Object.LastModified < threshold)
-            {
-                await _amazonFunctions.DeleteObject(s3Object.Key).ConfigureAwait(false);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
         }
 
         public bool EqualSize(S3ObjectInfo s3Object, FileInfo fileInfo)

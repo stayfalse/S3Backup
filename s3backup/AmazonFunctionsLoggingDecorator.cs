@@ -16,7 +16,6 @@ namespace S3Backup
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
         {
-            Log.PutOut($"Receive AmazonS3ObjectsList (RemotePath: {prefix}) started.");
             return await _inner.GetObjectsList(prefix).ConfigureAwait(false);
         }
 
@@ -25,13 +24,6 @@ namespace S3Backup
             Log.PutOut($"Upload {fileInfo.Name} to bucket started.");
             await _inner.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
             Log.PutOut($"Uploaded");
-        }
-
-        public async Task UploadObjects(ICollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
-        {
-            Log.PutOut($"Upload multiple objects.");
-            await _inner.UploadObjects(filesInfo, localPath, partSize).ConfigureAwait(false);
-            Log.PutOut($"Multiple objects uploaded.");
         }
 
         public async Task DeleteObject(string key)

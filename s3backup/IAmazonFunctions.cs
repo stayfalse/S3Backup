@@ -10,8 +10,6 @@ namespace S3Backup
 
         Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize);
 
-        Task UploadObjects(ICollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize);
-
         Task DeleteObject(string key);
 
         Task Purge(RemotePath prefix);

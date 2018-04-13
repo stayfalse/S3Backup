@@ -5,18 +5,20 @@ using System.Threading.Tasks;
 
 namespace S3Backup
 {
-    public class AmazonFunctionsDRLoggingDecorator : IAmazonFunctionsDryRunChecker
+    public class AmazonFunctionsDryRunCheckerLoggingDecorator : IAmazonFunctionsDryRunChecker
     {
         private readonly IAmazonFunctionsDryRunChecker _inner;
 
-        public AmazonFunctionsDRLoggingDecorator(IAmazonFunctionsDryRunChecker amazonFunctionsDryRunChecker)
+        public AmazonFunctionsDryRunCheckerLoggingDecorator(IAmazonFunctionsDryRunChecker amazonFunctionsDryRunChecker)
         {
             _inner = amazonFunctionsDryRunChecker ?? throw new ArgumentNullException(nameof(amazonFunctionsDryRunChecker));
         }
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
         {
-            return await _inner.GetObjectsList(prefix).ConfigureAwait(false);
+            var objectsList = _inner.GetObjectsList(prefix);
+            Log.PutOut($"S3Objects list received. (RemotePath: {prefix})");
+            return await objectsList.ConfigureAwait(false);
         }
 
         public async Task<bool> TryUploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
@@ -30,14 +32,19 @@ namespace S3Backup
             return true;
         }
 
-        public async Task<bool> TryUploadObjects(ICollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
+        public async Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
         {
-            if (!await _inner.TryUploadObjects(filesInfo, localPath, partSize).ConfigureAwait(false))
+            Log.PutOut($"Upload multiple objects.");
+            foreach (var fileInfo in filesInfo)
             {
-                Log.PutOut($"Multiple upload skipped.");
-                return false;
+                if (!await _inner.TryUploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false))
+                {
+                    Log.PutOut($"Multiple upload skipped.");
+                    return false;
+                }
             }
 
+            Log.PutOut($"Multiple objects uploaded.");
             return true;
         }
 

@@ -10,7 +10,7 @@ namespace S3Backup
 
         Task<bool> TryDeleteObject(string key);
 
-        Task<bool> TryUploadObjects(ICollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize);
+        Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize);
 
         Task<bool> TryPurge(RemotePath prefix);
 
