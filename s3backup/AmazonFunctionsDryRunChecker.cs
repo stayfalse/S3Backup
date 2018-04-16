@@ -53,11 +53,11 @@ namespace S3Backup
             return !_dryRun;
         }
 
-        public async Task<bool> TryDeleteObject(string key)
+        public async Task<bool> TryDeleteObject(string objectKey)
         {
             if (!_dryRun)
             {
-                await _amazonFunctions.DeleteObject(key).ConfigureAwait(false);
+                await _amazonFunctions.DeleteObject(objectKey).ConfigureAwait(false);
             }
 
             return !_dryRun;

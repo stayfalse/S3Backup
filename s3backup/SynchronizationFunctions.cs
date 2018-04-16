@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 
 using static System.FormattableString;
 
@@ -12,6 +11,11 @@ namespace S3Backup
     {
         public Dictionary<string, FileInfo> GetFiles(LocalPath localPath)
         {
+            if (localPath is null)
+            {
+                throw new ArgumentNullException(nameof(localPath));
+            }
+
             var files = new DirectoryInfo(localPath)
                 .GetFiles("*", SearchOption.AllDirectories);
             var filesInfo = new Dictionary<string, FileInfo>();
@@ -48,11 +52,16 @@ namespace S3Backup
             return string.Equals(s3Object.ETag, ComputeLocalETag(fileInfo, partSize), StringComparison.Ordinal);
         }
 
-        private static string ComputeLocalETag(FileInfo fileInfo, int partSize)
+        private static string ComputeLocalETag(FileInfo fileInfo, PartSize partSize)
         {
             if (fileInfo is null)
             {
                 throw new ArgumentNullException(nameof(fileInfo));
+            }
+
+            if (partSize is null)
+            {
+                throw new ArgumentNullException(nameof(partSize));
             }
 
             var localETag = "";

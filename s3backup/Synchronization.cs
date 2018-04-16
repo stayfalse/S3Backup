@@ -41,6 +41,11 @@ namespace S3Backup
 
         public async Task<IEnumerable<FileInfo>> CompareLocalFilesAndS3Objects(IEnumerable<S3ObjectInfo> objects)
         {
+            if (objects is null)
+            {
+                throw new ArgumentNullException(nameof(objects));
+            }
+
             var filesInfo = _synchronizationFunctions.GetFiles(_options.LocalPath);
             foreach (var s3Object in objects)
             {
@@ -68,8 +73,6 @@ namespace S3Backup
 
         public bool FileEqualsObject(FileInfo fileInfo, S3ObjectInfo s3Object)
         {
-            Log.PutOut($"Comparation object {s3Object.Key} and file {fileInfo.Name} started");
-
             if (_synchronizationFunctions.EqualSize(s3Object, fileInfo))
             {
                 if ((_options.OptionCases & OptionCases.SizeOnly) != OptionCases.SizeOnly)

@@ -16,6 +16,11 @@ namespace S3Backup
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
         {
+            if (prefix is null)
+            {
+                throw new ArgumentNullException(nameof(prefix));
+            }
+
             var objectsList = _inner.GetObjectsList(prefix);
             Log.PutOut($"S3Objects list received. (RemotePath: {prefix})");
             return await objectsList.ConfigureAwait(false);
@@ -23,6 +28,11 @@ namespace S3Backup
 
         public async Task<bool> TryUploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
         {
+            if (fileInfo is null)
+            {
+                throw new ArgumentNullException(nameof(fileInfo));
+            }
+
             if (!await _inner.TryUploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false))
             {
                 Log.PutOut($"{fileInfo.Name} upload skipped.");
@@ -48,11 +58,11 @@ namespace S3Backup
             return true;
         }
 
-        public async Task<bool> TryDeleteObject(string key)
+        public async Task<bool> TryDeleteObject(string objectKey)
         {
-            if (!await _inner.TryDeleteObject(key).ConfigureAwait(false))
+            if (!await _inner.TryDeleteObject(objectKey).ConfigureAwait(false))
             {
-                Log.PutOut($"{key} object deletion skipped.");
+                Log.PutOut($"{objectKey} object deletion skipped.");
                 return false;
             }
 

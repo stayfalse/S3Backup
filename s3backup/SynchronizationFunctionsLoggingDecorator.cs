@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace S3Backup
@@ -14,6 +15,11 @@ namespace S3Backup
 
         public Dictionary<string, FileInfo> GetFiles(LocalPath localPath)
         {
+            if (localPath is null)
+            {
+                throw new ArgumentNullException(nameof(localPath));
+            }
+
             var files = _inner.GetFiles(localPath);
             Log.PutOut($"FileInfo dictionary received. (LocalPath: {localPath})");
             return files;
@@ -21,6 +27,16 @@ namespace S3Backup
 
         public bool EqualSize(S3ObjectInfo s3Object, FileInfo fileInfo)
         {
+            if (s3Object is null)
+            {
+                throw new ArgumentNullException(nameof(s3Object));
+            }
+
+            if (fileInfo is null)
+            {
+                throw new ArgumentNullException(nameof(fileInfo));
+            }
+
             if (_inner.EqualSize(s3Object, fileInfo))
             {
                 Log.PutOut($"Size {s3Object.Key} {fileInfo.Name} matched.");
@@ -33,6 +49,16 @@ namespace S3Backup
 
         public bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo, PartSize partSize)
         {
+            if (s3Object is null)
+            {
+                throw new ArgumentNullException(nameof(s3Object));
+            }
+
+            if (fileInfo is null)
+            {
+                throw new ArgumentNullException(nameof(fileInfo));
+            }
+
             if (_inner.EqualETag(s3Object, fileInfo, partSize))
             {
                 Log.PutOut($"Hash {s3Object.Key} {fileInfo.Name} matched.");

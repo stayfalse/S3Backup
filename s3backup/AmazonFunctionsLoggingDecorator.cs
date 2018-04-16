@@ -21,20 +21,30 @@ namespace S3Backup
 
         public async Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
         {
+            if (fileInfo is null)
+            {
+                throw new ArgumentNullException(nameof(fileInfo));
+            }
+
             Log.PutOut($"Upload {fileInfo.Name} to bucket started.");
             await _inner.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
             Log.PutOut($"Uploaded");
         }
 
-        public async Task DeleteObject(string key)
+        public async Task DeleteObject(string objectKey)
         {
-            Log.PutOut($"Delete object {key}.");
-            await _inner.DeleteObject(key).ConfigureAwait(false);
+            Log.PutOut($"Delete object {objectKey}.");
+            await _inner.DeleteObject(objectKey).ConfigureAwait(false);
             Log.PutOut($"Deleted.");
         }
 
         public async Task Purge(RemotePath prefix)
         {
+            if (prefix is null)
+            {
+                throw new ArgumentNullException(nameof(prefix));
+            }
+
             Log.PutOut($"Purge bucket with remote path {prefix}");
             await _inner.Purge(prefix).ConfigureAwait(false);
             Log.PutOut($"Purge completed.");

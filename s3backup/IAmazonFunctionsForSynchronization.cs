@@ -6,7 +6,7 @@ namespace S3Backup
 {
     public interface IAmazonFunctionsForSynchronization
     {
-        Task DeleteObject(string key);
+        Task DeleteObject(string objectKey);
 
         Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix);
 

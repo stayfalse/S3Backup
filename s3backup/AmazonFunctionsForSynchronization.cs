@@ -19,9 +19,9 @@ namespace S3Backup
             return await _adaptee.GetObjectsList(prefix).ConfigureAwait(false);
         }
 
-        public async Task DeleteObject(string key)
+        public async Task DeleteObject(string objectKey)
         {
-            await _adaptee.TryDeleteObject(key).ConfigureAwait(false);
+            await _adaptee.TryDeleteObject(objectKey).ConfigureAwait(false);
         }
 
         public async Task UploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)

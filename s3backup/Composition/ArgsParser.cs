@@ -19,7 +19,7 @@ namespace S3Backup.Composition
 
         private ParallelParts ParallelParts => (_parallelParts == 0) ? new ParallelParts(4) : new ParallelParts(_parallelParts);
 
-        private ThresholdDate Threshold => new ThresholdDate((_recycleAge != 0) ? DateTime.Now.Subtract(new TimeSpan(_recycleAge, 0, 0, 0)) : default);
+        private ThresholdDate Threshold => new ThresholdDate((_recycleAge > 0) ? DateTime.Now.Subtract(new TimeSpan(_recycleAge, 0, 0, 0)) : default);
 
         private LocalPath LocalPath { get; set; }
 

@@ -32,6 +32,11 @@ namespace S3Backup
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
         {
+            if (prefix is null)
+            {
+                throw new ArgumentNullException(nameof(prefix));
+            }
+
             var list = new List<S3ObjectInfo>();
             foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
             {
@@ -87,20 +92,29 @@ namespace S3Backup
             }
         }
 
-        public async Task DeleteObject(string key)
+        public async Task DeleteObject(string objectKey)
         {
+            if (string.IsNullOrEmpty(objectKey))
+            {
+                throw new ArgumentException($"Object key is null or empty.");
+            }
+
             await Initialize().ConfigureAwait(false);
             var deleteRequest = new DeleteObjectRequest
             {
                 BucketName = _bucketName,
-                Key = key,
+                Key = objectKey,
             };
             var deleteResponse = await Client.DeleteObjectAsync(deleteRequest).ConfigureAwait(false);
-            Log.PutOut($"{key} deleted from bucket");
         }
 
         public async Task Purge(RemotePath prefix)
         {
+            if (prefix is null)
+            {
+                throw new ArgumentNullException(nameof(prefix));
+            }
+
             var deleteTasks = new List<Task>();
             foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
             {
