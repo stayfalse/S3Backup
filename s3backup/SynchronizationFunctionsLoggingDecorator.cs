@@ -7,10 +7,12 @@ namespace S3Backup
     public class SynchronizationFunctionsLoggingDecorator : ISynchronizationFunctions
     {
         private readonly ISynchronizationFunctions _inner;
+        private readonly ILog<CombinedLog> _log;
 
-        public SynchronizationFunctionsLoggingDecorator(ISynchronizationFunctions inner)
+        public SynchronizationFunctionsLoggingDecorator(ISynchronizationFunctions inner, ILog<CombinedLog> log)
         {
             _inner = inner;
+            _log = log;
         }
 
         public Dictionary<string, FileInfo> GetFiles(LocalPath localPath)
@@ -21,7 +23,7 @@ namespace S3Backup
             }
 
             var files = _inner.GetFiles(localPath);
-            Log.PutOut($"FileInfo dictionary received. (LocalPath: {localPath})");
+            _log.PutOut($"FileInfo dictionary received. (LocalPath: {localPath})");
             return files;
         }
 
@@ -39,11 +41,11 @@ namespace S3Backup
 
             if (_inner.EqualSize(s3Object, fileInfo))
             {
-                Log.PutOut($"Size {s3Object.Key} {fileInfo.Name} matched.");
+                _log.PutOut($"Size {s3Object.Key} {fileInfo.Name} matched.");
                 return true;
             }
 
-            Log.PutOut($"File {fileInfo.Name} size does not match S3Object {s3Object.Key}.");
+            _log.PutOut($"File {fileInfo.Name} size does not match S3Object {s3Object.Key}.");
             return false;
         }
 
@@ -61,11 +63,11 @@ namespace S3Backup
 
             if (_inner.EqualETag(s3Object, fileInfo, partSize))
             {
-                Log.PutOut($"Hash {s3Object.Key} {fileInfo.Name} matched.");
+                _log.PutOut($"Hash {s3Object.Key} {fileInfo.Name} matched.");
                 return true;
             }
 
-            Log.PutOut($"File {fileInfo.Name} hash does not match S3Object {s3Object.Key}.");
+            _log.PutOut($"File {fileInfo.Name} hash does not match S3Object {s3Object.Key}.");
             return false;
         }
     }

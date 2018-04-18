@@ -8,10 +8,12 @@ namespace S3Backup
     public class AmazonFunctionsLoggingDecorator : IAmazonFunctions
     {
         private readonly IAmazonFunctions _inner;
+        private readonly ILog<CombinedLog> _log;
 
-        public AmazonFunctionsLoggingDecorator(IAmazonFunctions amazonFunctionsDryRun)
+        public AmazonFunctionsLoggingDecorator(IAmazonFunctions amazonFunctionsDryRun, ILog<CombinedLog> log)
         {
             _inner = amazonFunctionsDryRun ?? throw new ArgumentNullException(nameof(amazonFunctionsDryRun));
+            _log = log;
         }
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
@@ -26,16 +28,16 @@ namespace S3Backup
                 throw new ArgumentNullException(nameof(fileInfo));
             }
 
-            Log.PutOut($"Upload {fileInfo.Name} to bucket started.");
+            _log.PutOut($"Upload {fileInfo.Name} to bucket started.");
             await _inner.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
-            Log.PutOut($"Uploaded");
+            _log.PutOut($"Uploaded");
         }
 
         public async Task DeleteObject(string objectKey)
         {
-            Log.PutOut($"Delete object {objectKey}.");
+            _log.PutOut($"Delete object {objectKey}.");
             await _inner.DeleteObject(objectKey).ConfigureAwait(false);
-            Log.PutOut($"Deleted.");
+            _log.PutOut($"Deleted.");
         }
 
         public async Task Purge(RemotePath prefix)
@@ -45,9 +47,9 @@ namespace S3Backup
                 throw new ArgumentNullException(nameof(prefix));
             }
 
-            Log.PutOut($"Purge bucket with remote path {prefix}");
+            _log.PutOut($"Purge bucket with remote path {prefix}");
             await _inner.Purge(prefix).ConfigureAwait(false);
-            Log.PutOut($"Purge completed.");
+            _log.PutOut($"Purge completed.");
         }
     }
 }

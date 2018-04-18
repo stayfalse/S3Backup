@@ -13,6 +13,13 @@ namespace S3Backup.Composition
             container.RegisterSingleton<IArgsParser, ArgsParser>();
             container.RegisterSingleton<IOptionsSource>(() => new OptionsSource(args, container.GetInstance<IArgsParser>()));
 
+            container.RegisterSingleton<ILog<ConsoleLog>, ConsoleLog>();
+           // container.RegisterDecorator<ILog<ConsoleLog>, LogMessageDecorator<ConsoleLog>>(Lifestyle.Singleton);
+            container.RegisterSingleton<ILog<FileLog>, FileLog>();
+           // container.RegisterDecorator<ILog<FileLog>, LogMessageDecorator<FileLog>>(Lifestyle.Singleton);
+            container.RegisterSingleton<ILog<CombinedLog>, CombinedLog>();
+            container.RegisterDecorator<ILog<CombinedLog>, LogMessageDecorator<CombinedLog>>(Lifestyle.Singleton);
+
             container.RegisterSingleton<IAmazonFunctions, UseAmazon>();
             container.RegisterDecorator<IAmazonFunctions, AmazonFunctionsLoggingDecorator>(Lifestyle.Singleton);
             container.RegisterSingleton<IAmazonFunctionsDryRunChecker, AmazonFunctionsDryRunChecker>();

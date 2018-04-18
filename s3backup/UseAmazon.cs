@@ -14,8 +14,9 @@ namespace S3Backup
         private readonly BucketName _bucketName;
         private readonly Lazy<AmazonS3Client> _client;
         private readonly Lazy<Task> _initializer;
+        private readonly ILog<CombinedLog> _log;
 
-        public UseAmazon(IOptionsSource optionsSource)
+        public UseAmazon(IOptionsSource optionsSource, ILog<CombinedLog> log)
         {
             if (optionsSource is null)
             {
@@ -26,6 +27,7 @@ namespace S3Backup
             _client = new Lazy<AmazonS3Client>(GetClient(options.ClientInformation));
             _bucketName = options.BucketName;
             _initializer = new Lazy<Task>(DoInitialize());
+            _log = log;
         }
 
         private AmazonS3Client Client => _client.Value;
@@ -83,7 +85,7 @@ namespace S3Backup
                 }
                 catch (Exception exception)
                 {
-                    Log.PutError($"Exception occurred: {exception.Message}");
+                    _log.PutError($"Exception occurred: {exception.Message}");
                 }
             }
             else
@@ -141,7 +143,7 @@ namespace S3Backup
             }
             catch (Exception exception)
             {
-                Log.PutError($"Exception occurred: {exception.Message}");
+                _log.PutError($"Exception occurred: {exception.Message}");
                 return null;
             }
         }
@@ -235,7 +237,7 @@ namespace S3Backup
             }
             catch (Exception exception)
             {
-                Log.PutError($"Exception occurred: {exception.Message}");
+                _log.PutError($"Exception occurred: {exception.Message}");
                 var abortMPURequest = new AbortMultipartUploadRequest
                 {
                     BucketName = _bucketName,
@@ -260,25 +262,25 @@ namespace S3Backup
                 foreach (var obj in objects)
                 {
                     deleteRequest.AddKey(obj.Key);
-                    Log.PutOut($"{obj.Key} added to keyversion List for delete objects");
+                    _log.PutOut($"{obj.Key} added to keyversion List for delete objects");
                 }
 
                 var deleteResponse = await Client.DeleteObjectsAsync(deleteRequest).ConfigureAwait(false);
-                Log.PutOut($"{objects.Capacity} objects deleted");
+                _log.PutOut($"{objects.Capacity} objects deleted");
             }
             catch (DeleteObjectsException exception)
             {
-                Log.PutError($"Exception occurred: {exception.Message}");
+                _log.PutError($"Exception occurred: {exception.Message}");
                 var errorResponse = exception.Response;
 
                 foreach (var deletedObject in errorResponse.DeletedObjects)
                 {
-                    Log.PutError($"Deleted item  {deletedObject.Key}");
+                    _log.PutError($"Deleted item  {deletedObject.Key}");
                 }
 
                 foreach (var deleteError in errorResponse.DeleteErrors)
                 {
-                    Log.PutError($"Error deleting item {deleteError.Key} Code - {deleteError.Code} Message - {deleteError.Message}");
+                    _log.PutError($"Error deleting item {deleteError.Key} Code - {deleteError.Code} Message - {deleteError.Message}");
                 }
             }
         }

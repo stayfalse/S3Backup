@@ -8,10 +8,12 @@ namespace S3Backup
     public class AmazonFunctionsDryRunCheckerLoggingDecorator : IAmazonFunctionsDryRunChecker
     {
         private readonly IAmazonFunctionsDryRunChecker _inner;
+        private readonly ILog<CombinedLog> _log;
 
-        public AmazonFunctionsDryRunCheckerLoggingDecorator(IAmazonFunctionsDryRunChecker amazonFunctionsDryRunChecker)
+        public AmazonFunctionsDryRunCheckerLoggingDecorator(IAmazonFunctionsDryRunChecker amazonFunctionsDryRunChecker, ILog<CombinedLog> log)
         {
             _inner = amazonFunctionsDryRunChecker ?? throw new ArgumentNullException(nameof(amazonFunctionsDryRunChecker));
+            _log = log;
         }
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
@@ -22,7 +24,7 @@ namespace S3Backup
             }
 
             var objectsList = _inner.GetObjectsList(prefix);
-            Log.PutOut($"S3Objects list received. (RemotePath: {prefix})");
+            _log.PutOut($"S3Objects list received. (RemotePath: {prefix})");
             return await objectsList.ConfigureAwait(false);
         }
 
@@ -35,7 +37,7 @@ namespace S3Backup
 
             if (!await _inner.TryUploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false))
             {
-                Log.PutOut($"{fileInfo.Name} upload skipped.");
+                _log.PutOut($"{fileInfo.Name} upload skipped.");
                 return false;
             }
 
@@ -44,17 +46,17 @@ namespace S3Backup
 
         public async Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
         {
-            Log.PutOut($"Upload multiple objects.");
+            _log.PutOut($"Upload multiple objects.");
             foreach (var fileInfo in filesInfo)
             {
                 if (!await _inner.TryUploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false))
                 {
-                    Log.PutOut($"Multiple upload skipped.");
+                    _log.PutOut($"Multiple upload skipped.");
                     return false;
                 }
             }
 
-            Log.PutOut($"Multiple objects uploaded.");
+            _log.PutOut($"Multiple objects uploaded.");
             return true;
         }
 
@@ -62,7 +64,7 @@ namespace S3Backup
         {
             if (!await _inner.TryDeleteObject(objectKey).ConfigureAwait(false))
             {
-                Log.PutOut($"{objectKey} object deletion skipped.");
+                _log.PutOut($"{objectKey} object deletion skipped.");
                 return false;
             }
 
@@ -73,7 +75,7 @@ namespace S3Backup
         {
             if (!await _inner.TryPurge(prefix).ConfigureAwait(false))
             {
-                Log.PutOut($"Purge skipped.");
+                _log.PutOut($"Purge skipped.");
                 return false;
             }
 
