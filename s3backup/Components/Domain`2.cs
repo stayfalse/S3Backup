@@ -28,14 +28,12 @@ namespace S3Backup.Components
 
         public virtual string ToString(string format, IFormatProvider formatProvider)
         {
-            var formattableValue = Value as IFormattable;
-            if (formattableValue != null)
+            if (Value is IFormattable formattableValue)
             {
                 return formattableValue.ToString(format, formatProvider);
             }
 
-            var convertibleValue = Value as IConvertible;
-            if (convertibleValue != null)
+            if (Value is IConvertible convertibleValue)
             {
                 return convertibleValue.ToString(formatProvider);
             }
@@ -84,8 +82,7 @@ namespace S3Backup.Components
 
         private T Convert<T>(Func<IConvertible, T> converter)
         {
-            var convertible = Value as IConvertible;
-            if (convertible != null)
+            if (Value is IConvertible convertible)
             {
                 return converter(convertible);
             }

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 using SimpleInjector;
 using SimpleInjector.Diagnostics;
@@ -14,11 +15,12 @@ namespace S3Backup.Composition
             container.RegisterSingleton<IOptionsSource>(() => new OptionsSource(args, container.GetInstance<IArgsParser>()));
 
             container.RegisterSingleton<ILog<ConsoleLog>, ConsoleLog>();
-           // container.RegisterDecorator<ILog<ConsoleLog>, LogMessageDecorator<ConsoleLog>>(Lifestyle.Singleton);
             container.RegisterSingleton<ILog<FileLog>, FileLog>();
-           // container.RegisterDecorator<ILog<FileLog>, LogMessageDecorator<FileLog>>(Lifestyle.Singleton);
-            container.RegisterSingleton<ILog<CombinedLog>, CombinedLog>();
-            container.RegisterDecorator<ILog<CombinedLog>, LogMessageDecorator<CombinedLog>>(Lifestyle.Singleton);
+            container.RegisterSingleton<ILog<IAmazonFunctions>, CombinedLog<IAmazonFunctions>>();
+            container.RegisterSingleton<ILog<IAmazonFunctionsDryRunChecker>, CombinedLog<IAmazonFunctionsDryRunChecker>>();
+            container.RegisterSingleton<ILog<ISynchronizationFunctions>, CombinedLog<ISynchronizationFunctions>>();
+            container.RegisterSingleton<ILog<ISynchronization>, CombinedLog<ISynchronization>>();
+            container.RegisterDecorator(typeof(ILog<>), typeof(LogMessageDecorator<>), Lifestyle.Singleton);
 
             container.RegisterSingleton<IAmazonFunctions, UseAmazon>();
             container.RegisterDecorator<IAmazonFunctions, AmazonFunctionsLoggingDecorator>(Lifestyle.Singleton);

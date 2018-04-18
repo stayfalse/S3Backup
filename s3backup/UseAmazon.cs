@@ -14,9 +14,9 @@ namespace S3Backup
         private readonly BucketName _bucketName;
         private readonly Lazy<AmazonS3Client> _client;
         private readonly Lazy<Task> _initializer;
-        private readonly ILog<CombinedLog> _log;
+        private readonly ILog<IAmazonFunctions> _log;
 
-        public UseAmazon(IOptionsSource optionsSource, ILog<CombinedLog> log)
+        public UseAmazon(IOptionsSource optionsSource, ILog<IAmazonFunctions> log)
         {
             if (optionsSource is null)
             {
@@ -85,7 +85,7 @@ namespace S3Backup
                 }
                 catch (Exception exception)
                 {
-                    _log.PutError($"Exception occurred: {exception.Message}");
+                    throw new Exception($"Exception occurred: {exception.Message}");
                 }
             }
             else

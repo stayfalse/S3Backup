@@ -8,9 +8,9 @@ namespace S3Backup
     public class SynchonizationLoggingDecorator : ISynchronization
     {
         private readonly ISynchronization _inner;
-        private readonly ILog<CombinedLog> _log;
+        private readonly ILog<ISynchronization> _log;
 
-        public SynchonizationLoggingDecorator(ISynchronization synchronization, ILog<CombinedLog> log)
+        public SynchonizationLoggingDecorator(ISynchronization synchronization, ILog<ISynchronization> log)
         {
             _inner = synchronization ?? throw new ArgumentNullException(nameof(synchronization));
             _log = log;

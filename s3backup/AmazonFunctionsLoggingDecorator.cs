@@ -8,9 +8,9 @@ namespace S3Backup
     public class AmazonFunctionsLoggingDecorator : IAmazonFunctions
     {
         private readonly IAmazonFunctions _inner;
-        private readonly ILog<CombinedLog> _log;
+        private readonly ILog<IAmazonFunctions> _log;
 
-        public AmazonFunctionsLoggingDecorator(IAmazonFunctions amazonFunctionsDryRun, ILog<CombinedLog> log)
+        public AmazonFunctionsLoggingDecorator(IAmazonFunctions amazonFunctionsDryRun, ILog<IAmazonFunctions> log)
         {
             _inner = amazonFunctionsDryRun ?? throw new ArgumentNullException(nameof(amazonFunctionsDryRun));
             _log = log;
