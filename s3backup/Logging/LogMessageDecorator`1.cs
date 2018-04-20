@@ -6,7 +6,7 @@ namespace S3Backup
         where T : class
     {
         public LogMessageDecorator(ILog<T> log)
-        : base(log)
+             : base(log)
         {
         }
 

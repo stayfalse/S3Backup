@@ -13,7 +13,7 @@ namespace S3Backup
         public AmazonFunctionsLoggingDecorator(IAmazonFunctions amazonFunctionsDryRun, ILog<IAmazonFunctions> log)
         {
             _inner = amazonFunctionsDryRun ?? throw new ArgumentNullException(nameof(amazonFunctionsDryRun));
-            _log = log;
+            _log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)

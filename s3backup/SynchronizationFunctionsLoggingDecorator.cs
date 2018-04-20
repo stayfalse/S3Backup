@@ -12,7 +12,7 @@ namespace S3Backup
         public SynchronizationFunctionsLoggingDecorator(ISynchronizationFunctions inner, ILog<ISynchronizationFunctions> log)
         {
             _inner = inner;
-            _log = log;
+            _log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
         public Dictionary<string, FileInfo> GetFiles(LocalPath localPath)

@@ -11,9 +11,9 @@ namespace S3Backup
         public CombinedLog(ILog<FileLog> fileLog, ILog<ConsoleLog> consoleLog)
         {
             var f = fileLog as DecoratorBase<ILog<FileLog>>;
-            _fileLog = (f != null) ? f.GetComponent() : fileLog;
+            _fileLog = (f != null) ? f.GetComponent() : fileLog ?? throw new ArgumentNullException(nameof(fileLog));
             var c = consoleLog as DecoratorBase<ILog<ConsoleLog>>;
-            _consoleLog = (c != null) ? c.GetComponent() : consoleLog;
+            _consoleLog = (c != null) ? c.GetComponent() : consoleLog ?? throw new ArgumentNullException(nameof(consoleLog));
         }
 
         private enum ConsoleLogClasses

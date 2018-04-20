@@ -13,7 +13,7 @@ namespace S3Backup
         public SynchonizationLoggingDecorator(ISynchronization synchronization, ILog<ISynchronization> log)
         {
             _inner = synchronization ?? throw new ArgumentNullException(nameof(synchronization));
-            _log = log;
+            _log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
         public async Task Synchronize()

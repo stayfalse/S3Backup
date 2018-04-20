@@ -27,7 +27,7 @@ namespace S3Backup
             _client = new Lazy<AmazonS3Client>(GetClient(options.ClientInformation));
             _bucketName = options.BucketName;
             _initializer = new Lazy<Task>(DoInitialize());
-            _log = log;
+            _log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
         private AmazonS3Client Client => _client.Value;
@@ -98,7 +98,7 @@ namespace S3Backup
         {
             if (string.IsNullOrEmpty(objectKey))
             {
-                throw new ArgumentException($"Object key is null or empty.");
+                throw new ArgumentException($"{nameof(objectKey)} is null or empty.");
             }
 
             await Initialize().ConfigureAwait(false);
