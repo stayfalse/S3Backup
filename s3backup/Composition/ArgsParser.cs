@@ -80,15 +80,10 @@ namespace S3Backup.Composition
                 {
                     optionCases = optionCases | OptionCases.Purge;
                 }
-
-                if (dryRun.HasValue())
-                {
-                    optionCases = optionCases | OptionCases.DryRun;
-                }
             }
 
             return (new Options(optionCases, LocalPath, RemotePath, PartSize, Threshold, ParallelParts),
-                new AmazonOptions(ClientInformation, BucketName));
+                new AmazonOptions(ClientInformation, BucketName, dryRun.HasValue()));
         }
 
         private static int ParseArg(CommandOption commandOption)

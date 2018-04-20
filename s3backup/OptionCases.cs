@@ -6,8 +6,7 @@ namespace S3Backup
     public enum OptionCases : ushort
     {
         None,
-        DryRun = 1,
-        Purge = 2,
-        SizeOnly = 4,
+        Purge = 1,
+        SizeOnly = 2,
     }
 }

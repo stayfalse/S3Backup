@@ -18,7 +18,7 @@ namespace S3Backup.AmazonS3Functionality
             }
 
             _amazonFunctions = amazonFunctions ?? throw new ArgumentNullException(nameof(amazonFunctions));
-            _dryRun = (optionsSource.Options.OptionCases & OptionCases.DryRun) == OptionCases.DryRun;
+            _dryRun = optionsSource.AmazonOptions.DryRun;
         }
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
