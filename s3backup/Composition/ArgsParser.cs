@@ -40,10 +40,10 @@ namespace S3Backup.Composition
             var app = new CommandLineApplication { Name = "S3Backup" };
             app.HelpOption("-?|-h|--help");
 
-            var localPath = app.Option("-l  | --local", "set Local Path", CommandOptionType.SingleValue);
-            var bucketName = app.Option("-b  | --bucket", "set Bucket Name", CommandOptionType.SingleValue);
-            var remotePath = app.Option("-rp | --remotePath", "set Remote Path", CommandOptionType.SingleValue);
-            var configFile = app.Option("-c  | --config", "set AWS config file path", CommandOptionType.SingleValue);
+            var localPath = app.Option("-l  | --local", "set Local Path (required parameter)", CommandOptionType.SingleValue);
+            var bucketName = app.Option("-b  | --bucket", "set Bucket Name (required parameter)", CommandOptionType.SingleValue);
+            var remotePath = app.Option("-rp | --remotePath", "set Remote Path (required parameter)", CommandOptionType.SingleValue);
+            var configFile = app.Option("-c  | --config", "set AWS config file path (default is appsettings.json)", CommandOptionType.SingleValue);
 
             var recycleAge = app.Option("-ra | --recycleAge", "set recycle age in days (default is default DateTime)", CommandOptionType.SingleValue);
             var parallelParts = app.Option("-pp | --parallelParts", "ParallelParts (defauls is 4)", CommandOptionType.SingleValue);
@@ -51,14 +51,14 @@ namespace S3Backup.Composition
 
             var sizeOnly = app.Option("-s  | --sizeonly", "do not compare checksums", CommandOptionType.NoValue);
             var purge = app.Option("-p  | --purge", "purge bucket contents before synchronizing (CAUTION!)", CommandOptionType.NoValue);
-            var dryRun = app.Option("-d  | --dryRun", "DryRun", CommandOptionType.NoValue);
+            var dryRun = app.Option("-d  | --dryRun", "initialize dry run", CommandOptionType.NoValue);
 
             app.Execute(args);
 
             var optionCases = OptionCases.None;
             if (!localPath.HasValue() || !bucketName.HasValue() || !remotePath.HasValue())
             {
-                throw new Exception($"Command line argument is missing or invalid.");
+                throw new Exception($"Command line argument is missing (one or several required parameters).");
             }
             else
             {

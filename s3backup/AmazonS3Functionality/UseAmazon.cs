@@ -7,8 +7,6 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
 
-using S3Backup.Logging;
-
 namespace S3Backup.AmazonS3Functionality
 {
     internal sealed class UseAmazon : IAmazonFunctions
@@ -16,9 +14,8 @@ namespace S3Backup.AmazonS3Functionality
         private readonly BucketName _bucketName;
         private readonly Lazy<AmazonS3Client> _client;
         private readonly Lazy<Task> _initializer;
-        private readonly ILog<IAmazonFunctions> _log;
 
-        public UseAmazon(IOptionsSource optionsSource, ILog<IAmazonFunctions> log)
+        public UseAmazon(IOptionsSource optionsSource)
         {
             if (optionsSource is null)
             {
@@ -29,7 +26,6 @@ namespace S3Backup.AmazonS3Functionality
             _client = new Lazy<AmazonS3Client>(GetClient(options.ClientInformation));
             _bucketName = options.BucketName;
             _initializer = new Lazy<Task>(DoInitialize());
-            _log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
         private AmazonS3Client Client => _client.Value;
@@ -85,9 +81,9 @@ namespace S3Backup.AmazonS3Functionality
                 {
                     var putObjectResponse = await Client.PutObjectAsync(putObjectRequest).ConfigureAwait(false);
                 }
-                catch (Exception exception)
+                catch
                 {
-                    _log.PutError($"Exception occurred: {exception.Message}");
+                    throw;
                 }
             }
             else
@@ -104,12 +100,19 @@ namespace S3Backup.AmazonS3Functionality
             }
 
             await Initialize().ConfigureAwait(false);
-            var deleteRequest = new DeleteObjectRequest
+            try
             {
-                BucketName = _bucketName,
-                Key = objectKey,
-            };
-            var deleteResponse = await Client.DeleteObjectAsync(deleteRequest).ConfigureAwait(false);
+                var deleteRequest = new DeleteObjectRequest
+                {
+                    BucketName = _bucketName,
+                    Key = objectKey,
+                };
+                var deleteResponse = await Client.DeleteObjectAsync(deleteRequest).ConfigureAwait(false);
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         public async Task Purge(RemotePath prefix)
@@ -119,13 +122,20 @@ namespace S3Backup.AmazonS3Functionality
                 throw new ArgumentNullException(nameof(prefix));
             }
 
-            var deleteTasks = new List<Task>();
-            foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
+            try
             {
-                deleteTasks.Add(DeleteObject(obj.Key));
-            }
+                var deleteTasks = new List<Task>();
+                foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
+                {
+                    deleteTasks.Add(DeleteObject(obj.Key));
+                }
 
-            await Task.WhenAll(deleteTasks).ConfigureAwait(false);
+                await Task.WhenAll(deleteTasks).ConfigureAwait(false);
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         private AmazonS3Client GetClient(ClientInformation config)
@@ -135,19 +145,11 @@ namespace S3Backup.AmazonS3Functionality
                 throw new ArgumentNullException(nameof(config));
             }
 
-            try
+            var s3Config = new AmazonS3Config
             {
-                var s3Config = new AmazonS3Config
-                {
-                    ServiceURL = config.ServiceUrl,
-                };
-                return new AmazonS3Client(config.AccessKey, config.SecretKey, s3Config);
-            }
-            catch (Exception exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-                return null;
-            }
+                ServiceURL = config.ServiceUrl,
+            };
+            return new AmazonS3Client(config.AccessKey, config.SecretKey, s3Config);
         }
 
         private async Task Initialize() => await _initializer.Value.ConfigureAwait(false);
@@ -237,9 +239,8 @@ namespace S3Backup.AmazonS3Functionality
                 compRequest.AddPartETags(await partResponses.ConfigureAwait(false));
                 var completeUploadResponse = await Client.CompleteMultipartUploadAsync(compRequest).ConfigureAwait(false);
             }
-            catch (Exception exception)
+            catch
             {
-                _log.PutError($"Exception occurred: {exception.Message}");
                 var abortMPURequest = new AbortMultipartUploadRequest
                 {
                     BucketName = _bucketName,
@@ -247,6 +248,7 @@ namespace S3Backup.AmazonS3Functionality
                     UploadId = multipartUploadResponse.UploadId,
                 };
                 await Client.AbortMultipartUploadAsync(abortMPURequest).ConfigureAwait(false);
+                throw;
             }
         }
 
@@ -264,26 +266,13 @@ namespace S3Backup.AmazonS3Functionality
                 foreach (var obj in objects)
                 {
                     deleteRequest.AddKey(obj.Key);
-                    _log.PutOut($"{obj.Key} added to keyversion List for delete objects");
                 }
 
                 var deleteResponse = await Client.DeleteObjectsAsync(deleteRequest).ConfigureAwait(false);
-                _log.PutOut($"{objects.Capacity} objects deleted");
             }
-            catch (DeleteObjectsException exception)
+            catch
             {
-                _log.PutError($"Exception occurred: {exception.Message}");
-                var errorResponse = exception.Response;
-
-                foreach (var deletedObject in errorResponse.DeletedObjects)
-                {
-                    _log.PutError($"Deleted item  {deletedObject.Key}");
-                }
-
-                foreach (var deleteError in errorResponse.DeleteErrors)
-                {
-                    _log.PutError($"Error deleting item {deleteError.Key} Code - {deleteError.Code} Message - {deleteError.Message}");
-                }
+                throw;
             }
         }
     }

@@ -38,14 +38,30 @@ namespace S3Backup.AmazonS3Functionality
             }
 
             _log.PutOut($"Upload {fileInfo.Name} to bucket started.");
-            await _inner.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
+            try
+            {
+                await _inner.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                _log.PutError($"Exception occurred: {exception.Message}");
+            }
+
             _log.PutOut($"Uploaded");
         }
 
         public async Task DeleteObject(string objectKey)
         {
             _log.PutOut($"Delete object {objectKey}.");
-            await _inner.DeleteObject(objectKey).ConfigureAwait(false);
+            try
+            {
+                await _inner.DeleteObject(objectKey).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                _log.PutError($"Exception occurred: {exception.Message}");
+            }
+
             _log.PutOut($"Deleted.");
         }
 
@@ -57,7 +73,30 @@ namespace S3Backup.AmazonS3Functionality
             }
 
             _log.PutOut($"Purge bucket with remote path {prefix}");
-            await _inner.Purge(prefix).ConfigureAwait(false);
+            try
+            {
+                await _inner.Purge(prefix).ConfigureAwait(false);
+            }
+            catch (Amazon.S3.DeleteObjectsException exception)
+            {
+                _log.PutError($"Exception occurred: {exception.Message}");
+                var errorResponse = exception.Response;
+
+                foreach (var deletedObject in errorResponse.DeletedObjects)
+                {
+                    _log.PutError($"Deleted item  {deletedObject.Key}");
+                }
+
+                foreach (var deleteError in errorResponse.DeleteErrors)
+                {
+                    _log.PutError($"Error deleting item {deleteError.Key} Code - {deleteError.Code} Message - {deleteError.Message}");
+                }
+            }
+            catch (Exception exception)
+            {
+                _log.PutError($"Exception occurred: {exception.Message}");
+            }
+
             _log.PutOut($"Purge completed.");
         }
     }
