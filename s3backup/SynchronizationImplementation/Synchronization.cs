@@ -27,7 +27,7 @@ namespace S3Backup.SynchronizationImplementation
 
         public async Task Synchronize()
         {
-            if ((_options.OptionCases & OptionCases.Purge) != OptionCases.Purge)
+            if ((_options.OptionCases & OptionCases.Purge) == OptionCases.Purge)
             {
                 await _amazonFunctions.Purge(_options.RemotePath).ConfigureAwait(false);
             }

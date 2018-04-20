@@ -21,11 +21,6 @@ namespace S3Backup.AmazonS3Functionality
             _dryRun = optionsSource.AmazonOptions.DryRun;
         }
 
-        public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
-        {
-            return await _amazonFunctions.GetObjectsList(prefix).ConfigureAwait(false);
-        }
-
         public async Task<bool> TryUploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
         {
             if (!_dryRun)

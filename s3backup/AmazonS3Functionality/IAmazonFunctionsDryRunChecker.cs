@@ -6,8 +6,6 @@ namespace S3Backup.AmazonS3Functionality
 {
     public interface IAmazonFunctionsDryRunChecker
     {
-        Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix);
-
         Task<bool> TryDeleteObject(string objectKey);
 
         Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize);

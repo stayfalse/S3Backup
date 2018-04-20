@@ -18,18 +18,6 @@ namespace S3Backup.AmazonS3Functionality
             _log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
-        public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
-        {
-            if (prefix is null)
-            {
-                throw new ArgumentNullException(nameof(prefix));
-            }
-
-            var objectsList = _inner.GetObjectsList(prefix);
-            _log.PutOut($"S3Objects list received. (RemotePath: {prefix})");
-            return await objectsList.ConfigureAwait(false);
-        }
-
         public async Task<bool> TryUploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
         {
             if (fileInfo is null)
@@ -37,6 +25,7 @@ namespace S3Backup.AmazonS3Functionality
                 throw new ArgumentNullException(nameof(fileInfo));
             }
 
+            _log.PutOut($"Try upload multiple missing object.");
             if (!await _inner.TryUploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false))
             {
                 _log.PutOut($"{fileInfo.Name} upload skipped.");
@@ -64,6 +53,7 @@ namespace S3Backup.AmazonS3Functionality
 
         public async Task<bool> TryDeleteObject(string objectKey)
         {
+            _log.PutOut($"Try delete mismatching object {objectKey}.");
             if (!await _inner.TryDeleteObject(objectKey).ConfigureAwait(false))
             {
                 _log.PutOut($"{objectKey} object deletion skipped.");

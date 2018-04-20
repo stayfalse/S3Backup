@@ -20,7 +20,14 @@ namespace S3Backup.AmazonS3Functionality
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
         {
-            return await _inner.GetObjectsList(prefix).ConfigureAwait(false);
+            if (prefix is null)
+            {
+                throw new ArgumentNullException(nameof(prefix));
+            }
+
+            var objectsList = _inner.GetObjectsList(prefix);
+            _log.PutOut($"S3Objects list received. (RemotePath: {prefix})");
+            return await objectsList.ConfigureAwait(false);
         }
 
         public async Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
