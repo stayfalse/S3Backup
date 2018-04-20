@@ -270,7 +270,7 @@ namespace S3Backup.AmazonS3Functionality
 
                 var deleteResponse = await Client.DeleteObjectsAsync(deleteRequest).ConfigureAwait(false);
             }
-            catch
+            catch (DeleteObjectsException)
             {
                 throw;
             }

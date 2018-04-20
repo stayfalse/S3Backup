@@ -42,6 +42,10 @@ namespace S3Backup.AmazonS3Functionality
             {
                 await _inner.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
             }
+            catch (ArgumentNullException)
+            {
+                throw;
+            }
             catch (Exception exception)
             {
                 _log.PutError($"Exception occurred: {exception.Message}");
@@ -56,6 +60,10 @@ namespace S3Backup.AmazonS3Functionality
             try
             {
                 await _inner.DeleteObject(objectKey).ConfigureAwait(false);
+            }
+            catch (ArgumentNullException)
+            {
+                throw;
             }
             catch (Exception exception)
             {
@@ -76,6 +84,10 @@ namespace S3Backup.AmazonS3Functionality
             try
             {
                 await _inner.Purge(prefix).ConfigureAwait(false);
+            }
+            catch (ArgumentNullException)
+            {
+                throw;
             }
             catch (Amazon.S3.DeleteObjectsException exception)
             {
