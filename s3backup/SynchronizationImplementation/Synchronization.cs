@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace S3Backup
+using S3Backup.AmazonS3Functionality;
+
+namespace S3Backup.SynchronizationImplementation
 {
     public class Synchronization : ISynchronization
     {
@@ -39,7 +41,7 @@ namespace S3Backup
                 .ConfigureAwait(false);
         }
 
-        public async Task<IEnumerable<FileInfo>> CompareLocalFilesAndS3Objects(IEnumerable<S3ObjectInfo> objects)
+        private async Task<IEnumerable<FileInfo>> CompareLocalFilesAndS3Objects(IEnumerable<S3ObjectInfo> objects)
         {
             if (objects is null)
             {
@@ -71,7 +73,7 @@ namespace S3Backup
             return filesInfo.Values;
         }
 
-        public bool FileEqualsObject(FileInfo fileInfo, S3ObjectInfo s3Object)
+        private bool FileEqualsObject(FileInfo fileInfo, S3ObjectInfo s3Object)
         {
             if (_synchronizationFunctions.EqualSize(s3Object, fileInfo))
             {

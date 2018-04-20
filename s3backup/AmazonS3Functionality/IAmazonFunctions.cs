@@ -2,7 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 
-namespace S3Backup
+namespace S3Backup.AmazonS3Functionality
 {
     public interface IAmazonFunctions
     {

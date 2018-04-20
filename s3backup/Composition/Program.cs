@@ -1,5 +1,9 @@
 ﻿using System.Threading.Tasks;
 
+using S3Backup.AmazonS3Functionality;
+using S3Backup.Logging;
+using S3Backup.SynchronizationImplementation;
+
 using SimpleInjector;
 using SimpleInjector.Diagnostics;
 
@@ -31,7 +35,7 @@ namespace S3Backup.Composition
             container.RegisterDecorator<ISynchronizationFunctions, SynchronizationFunctionsLoggingDecorator>(Lifestyle.Singleton);
 
             container.RegisterSingleton<ISynchronization, Synchronization>();
-            container.RegisterDecorator<ISynchronization, SynchonizationLoggingDecorator>(Lifestyle.Singleton);
+            container.RegisterDecorator<ISynchronization, SynchronizationLoggingDecorator>(Lifestyle.Singleton);
 
             container.Verify(VerificationOption.VerifyAndDiagnose);
             var results = Analyzer.Analyze(container);

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace S3Backup
+using S3Backup.Logging;
+
+namespace S3Backup.AmazonS3Functionality
 {
     public class AmazonFunctionsLoggingDecorator : IAmazonFunctions
     {

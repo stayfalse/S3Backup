@@ -1,4 +1,4 @@
-﻿namespace S3Backup
+﻿namespace S3Backup.Logging
 {
     public class DecoratorBase<TComponentInterface>
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace S3Backup
+namespace S3Backup.Logging
 {
     public class FileLog : ILog<FileLog>
     {

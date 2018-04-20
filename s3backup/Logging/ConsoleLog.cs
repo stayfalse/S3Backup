@@ -2,7 +2,7 @@
 
 using static System.Console;
 
-namespace S3Backup
+namespace S3Backup.Logging
 {
     public class ConsoleLog : ILog<ConsoleLog>
     {

@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace S3Backup
+using S3Backup.Logging;
+
+namespace S3Backup.SynchronizationImplementation
 {
     public class SynchronizationFunctionsLoggingDecorator : ISynchronizationFunctions
     {
@@ -39,6 +41,7 @@ namespace S3Backup
                 throw new ArgumentNullException(nameof(fileInfo));
             }
 
+            _log.PutOut($"Size comparison file {fileInfo.Name} and S3Object {s3Object.Key} started.");
             if (_inner.EqualSize(s3Object, fileInfo))
             {
                 _log.PutOut($"Size {s3Object.Key} {fileInfo.Name} matched.");
@@ -61,6 +64,7 @@ namespace S3Backup
                 throw new ArgumentNullException(nameof(fileInfo));
             }
 
+            _log.PutOut($"Hash comparison file {fileInfo.Name} and S3Object {s3Object.Key} started.");
             if (_inner.EqualETag(s3Object, fileInfo, partSize))
             {
                 _log.PutOut($"Hash {s3Object.Key} {fileInfo.Name} matched.");

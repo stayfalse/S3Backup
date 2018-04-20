@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 
 using static System.FormattableString;
 
-namespace S3Backup
+namespace S3Backup.SynchronizationImplementation
 {
     public class SynchronizationFunctions : ISynchronizationFunctions
     {

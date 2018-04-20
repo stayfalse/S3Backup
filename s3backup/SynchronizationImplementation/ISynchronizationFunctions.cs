@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace S3Backup
+namespace S3Backup.SynchronizationImplementation
 {
     public interface ISynchronizationFunctions
     {

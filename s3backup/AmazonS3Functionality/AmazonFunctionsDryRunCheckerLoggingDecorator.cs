@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace S3Backup
+using S3Backup.Logging;
+
+namespace S3Backup.AmazonS3Functionality
 {
     public class AmazonFunctionsDryRunCheckerLoggingDecorator : IAmazonFunctionsDryRunChecker
     {
@@ -46,7 +48,7 @@ namespace S3Backup
 
         public async Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
         {
-            _log.PutOut($"Upload multiple objects.");
+            _log.PutOut($"Try upload multiple missing objects.");
             foreach (var fileInfo in filesInfo)
             {
                 if (!await _inner.TryUploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false))

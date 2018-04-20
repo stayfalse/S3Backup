@@ -7,7 +7,9 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
 
-namespace S3Backup
+using S3Backup.Logging;
+
+namespace S3Backup.AmazonS3Functionality
 {
     internal sealed class UseAmazon : IAmazonFunctions
     {
@@ -85,7 +87,7 @@ namespace S3Backup
                 }
                 catch (Exception exception)
                 {
-                    throw new Exception($"Exception occurred: {exception.Message}");
+                    _log.PutError($"Exception occurred: {exception.Message}");
                 }
             }
             else

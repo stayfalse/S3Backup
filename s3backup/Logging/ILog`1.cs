@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace S3Backup
+namespace S3Backup.Logging
 {
     public interface ILog<T>
         where T : class
