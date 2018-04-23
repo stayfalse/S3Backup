@@ -230,24 +230,24 @@ namespace S3Backup.AmazonS3Functionality
                 }
 
                 var partResponses = Task.WhenAll(list);
-                var compRequest = new CompleteMultipartUploadRequest
+                var completeRequest = new CompleteMultipartUploadRequest
                 {
                     BucketName = _bucketName,
                     Key = objectKey,
                     UploadId = multipartUploadResponse.UploadId,
                 };
-                compRequest.AddPartETags(await partResponses.ConfigureAwait(false));
-                var completeUploadResponse = await Client.CompleteMultipartUploadAsync(compRequest).ConfigureAwait(false);
+                completeRequest.AddPartETags(await partResponses.ConfigureAwait(false));
+                var completeUploadResponse = await Client.CompleteMultipartUploadAsync(completeRequest).ConfigureAwait(false);
             }
             catch
             {
-                var abortMPURequest = new AbortMultipartUploadRequest
+                var abortMultipartUploadRequest = new AbortMultipartUploadRequest
                 {
                     BucketName = _bucketName,
                     Key = objectKey,
                     UploadId = multipartUploadResponse.UploadId,
                 };
-                await Client.AbortMultipartUploadAsync(abortMPURequest).ConfigureAwait(false);
+                await Client.AbortMultipartUploadAsync(abortMultipartUploadRequest).ConfigureAwait(false);
                 throw;
             }
         }
