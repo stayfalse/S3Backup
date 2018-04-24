@@ -10,9 +10,10 @@ namespace S3Backup.AmazonS3Functionality
         private readonly IAmazonFunctionsDryRunChecker _dryRun;
         private readonly IAmazonFunctions _functions;
 
-        public AmazonFunctionsForSynchronization(IAmazonFunctionsDryRunChecker amazonFunctionsDryRunChecker, IAmazonFunctions functions)
+        public AmazonFunctionsForSynchronization(IAmazonFunctionsDryRunChecker amazonFunctionsDryRunChecker, IAmazonFunctions amazonFunctions)
         {
             _dryRun = amazonFunctionsDryRunChecker ?? throw new ArgumentNullException(nameof(amazonFunctionsDryRunChecker));
+            _functions = amazonFunctions ?? throw new ArgumentNullException(nameof(amazonFunctions));
         }
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
