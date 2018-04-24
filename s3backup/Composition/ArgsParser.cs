@@ -40,54 +40,67 @@ namespace S3Backup.Composition
             var app = new CommandLineApplication { Name = "S3Backup" };
             app.HelpOption("-?|-h|--help");
 
-            var localPath = app.Option("-l  | --local", "set Local Path (required parameter)", CommandOptionType.SingleValue);
-            var bucketName = app.Option("-b  | --bucket", "set Bucket Name (required parameter)", CommandOptionType.SingleValue);
-            var remotePath = app.Option("-rp | --remotePath", "set Remote Path (required parameter)", CommandOptionType.SingleValue);
-            var configFile = app.Option("-c  | --config", "set AWS config file path (default is appsettings.json)", CommandOptionType.SingleValue);
+            var localPath = app.Option("-l  | --local", "Set Local Path (required parameter)", CommandOptionType.SingleValue);
+            var bucketName = app.Option("-b  | --bucket", "Set Bucket Name (required parameter)", CommandOptionType.SingleValue);
+            var remotePath = app.Option("-rp | --remotePath", "Set Remote Path (required parameter)", CommandOptionType.SingleValue);
+            var configFile = app.Option("-c  | --config", "Set AWS config file path (default is appsettings.json)", CommandOptionType.SingleValue);
 
-            var recycleAge = app.Option("-ra | --recycleAge", "set recycle age in days (default is default DateTime)", CommandOptionType.SingleValue);
-            var parallelParts = app.Option("-pp | --parallelParts", "ParallelParts (defauls is 4)", CommandOptionType.SingleValue);
-            var partSize = app.Option("-ps | --partSize", "Part Size in megabytes (default is 250 MB)", CommandOptionType.SingleValue);
+            var recycleAge = app.Option("-ra | --recycleAge", "Set recycle age in days (default is default DateTime)", CommandOptionType.SingleValue);
+            var parallelParts = app.Option("-pp | --parallelParts", "Set number of Parallel Parts (defauls is 4)", CommandOptionType.SingleValue);
+            var partSize = app.Option("-ps | --partSize", "Set Part Size in megabytes (default is 250 MB)", CommandOptionType.SingleValue);
 
-            var sizeOnly = app.Option("-s  | --sizeonly", "do not compare checksums", CommandOptionType.NoValue);
-            var purge = app.Option("-p  | --purge", "purge bucket contents before synchronizing (CAUTION!)", CommandOptionType.NoValue);
-            var dryRun = app.Option("-d  | --dryRun", "initialize dry run", CommandOptionType.NoValue);
+            var sizeOnly = app.Option("-s  | --sizeonly", "Do not compare checksums", CommandOptionType.NoValue);
+            var purge = app.Option("-p  | --purge", "Purge bucket contents before synchronizing (CAUTION!)", CommandOptionType.NoValue);
+            var dryRun = app.Option("-d  | --dryRun", "Initialize dry run", CommandOptionType.NoValue);
 
             app.Execute(args);
 
             var optionCases = OptionCases.None;
-            if (!localPath.HasValue() || !bucketName.HasValue() || !remotePath.HasValue())
+            try
             {
-                throw new Exception($"Command line argument is missing (one or several required parameters).");
-            }
-            else
-            {
-                _recycleAge = ParseArg(recycleAge);
-                _parallelParts = ParseArg(parallelParts);
-                _partSize = ParseArg(partSize);
-
-                LocalPath = new LocalPath(localPath.Value());
-                BucketName = new BucketName(bucketName.Value());
-                RemotePath = new RemotePath(remotePath.Value());
-                ConfigFile = configFile.Value();
-
-                if (sizeOnly.HasValue())
+                if (!localPath.HasValue() || !bucketName.HasValue() || !remotePath.HasValue())
                 {
-                    optionCases = optionCases | OptionCases.SizeOnly;
+                    throw new IllegalArgumentException($"Command line argument is missing (one or several required parameters).");
+                }
+                else
+                {
+                    _recycleAge = ParseArg(recycleAge);
+                    _parallelParts = ParseArg(parallelParts);
+                    _partSize = ParseArg(partSize);
+
+                    LocalPath = new LocalPath(localPath.Value());
+                    BucketName = new BucketName(bucketName.Value());
+                    RemotePath = new RemotePath(remotePath.Value());
+                    ConfigFile = configFile.Value();
+
+                    if (sizeOnly.HasValue())
+                    {
+                        optionCases = optionCases | OptionCases.SizeOnly;
+                    }
+
+                    if (purge.HasValue())
+                    {
+                        optionCases = optionCases | OptionCases.Purge;
+                    }
                 }
 
-                if (purge.HasValue())
-                {
-                    optionCases = optionCases | OptionCases.Purge;
-                }
+                return (new Options(optionCases, LocalPath, RemotePath, PartSize, Threshold, ParallelParts),
+                    new AmazonOptions(ClientInformation, BucketName, dryRun.HasValue()));
             }
-
-            return (new Options(optionCases, LocalPath, RemotePath, PartSize, Threshold, ParallelParts),
-                new AmazonOptions(ClientInformation, BucketName, dryRun.HasValue()));
+            catch (IllegalArgumentException)
+            {
+                app.ShowHelp();
+                throw;
+            }
         }
 
         private static int ParseArg(CommandOption commandOption)
         {
+            if (commandOption is null)
+            {
+                throw new ArgumentNullException(nameof(commandOption));
+            }
+
             if (commandOption.HasValue())
             {
                 if (int.TryParse(commandOption.Value(), out var value))
@@ -96,7 +109,7 @@ namespace S3Backup.Composition
                 }
                 else
                 {
-                    throw new Exception($"Command line argument {commandOption.Template} is invalid.");
+                    throw new IllegalArgumentException($"Command line argument {commandOption.Template} is invalid.");
                 }
             }
 
