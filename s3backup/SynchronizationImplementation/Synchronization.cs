@@ -36,12 +36,15 @@ namespace S3Backup.SynchronizationImplementation
 
             var filesInfo = await CompareLocalFilesAndS3Objects(objects).ConfigureAwait(false);
 
-            await _amazonFunctions
-                .UploadObjects(filesInfo, _options.LocalPath, _options.PartSize)
-                .ConfigureAwait(false);
+            if (filesInfo.Count > 0)
+            {
+                await _amazonFunctions
+                  .UploadObjects(filesInfo, _options.LocalPath, _options.PartSize)
+                  .ConfigureAwait(false);
+            }
         }
 
-        private async Task<IEnumerable<FileInfo>> CompareLocalFilesAndS3Objects(IEnumerable<S3ObjectInfo> objects)
+        private async Task<IReadOnlyCollection<FileInfo>> CompareLocalFilesAndS3Objects(IEnumerable<S3ObjectInfo> objects)
         {
             if (objects is null)
             {

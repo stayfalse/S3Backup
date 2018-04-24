@@ -27,7 +27,7 @@ namespace S3Backup.Composition
 
             container.RegisterSingleton<IAmazonFunctions, UseAmazon>();
             container.RegisterDecorator<IAmazonFunctions, AmazonFunctionsLoggingDecorator>(Lifestyle.Singleton);
-            container.RegisterDecorator<IAmazonFunctions, AmazonFunctionsReliabitityDecorator>(Lifestyle.Singleton);
+            container.RegisterDecorator<IAmazonFunctions, AmazonFunctionsReliabilityDecorator>(Lifestyle.Singleton);
             container.RegisterSingleton<IAmazonFunctionsDryRunChecker, AmazonFunctionsDryRunChecker>();
             container.RegisterDecorator<IAmazonFunctionsDryRunChecker, AmazonFunctionsDryRunCheckerLoggingDecorator>(Lifestyle.Singleton);
             container.RegisterSingleton<IAmazonFunctionsForSynchronization, AmazonFunctionsForSynchronization>();

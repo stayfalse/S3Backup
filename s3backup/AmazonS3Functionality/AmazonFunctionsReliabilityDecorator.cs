@@ -7,12 +7,12 @@ using S3Backup.Logging;
 
 namespace S3Backup.AmazonS3Functionality
 {
-    public class AmazonFunctionsReliabitityDecorator : IAmazonFunctions
+    public class AmazonFunctionsReliabilityDecorator : IAmazonFunctions
     {
         private readonly IAmazonFunctions _inner;
         private readonly ILog<IAmazonFunctions> _log;
 
-        public AmazonFunctionsReliabitityDecorator(IAmazonFunctions amazonFunctions, ILog<IAmazonFunctions> log)
+        public AmazonFunctionsReliabilityDecorator(IAmazonFunctions amazonFunctions, ILog<IAmazonFunctions> log)
         {
             _inner = amazonFunctions ?? throw new ArgumentNullException(nameof(amazonFunctions));
             _log = log ?? throw new ArgumentNullException(nameof(log));
