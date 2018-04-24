@@ -47,7 +47,6 @@ namespace S3Backup.AmazonS3Functionality
                 }
             }
 
-            _log.PutOut($"Multiple objects uploaded.");
             return true;
         }
 

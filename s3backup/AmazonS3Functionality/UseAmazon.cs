@@ -245,6 +245,8 @@ namespace S3Backup.AmazonS3Functionality
             {
                 deleteRequest.AddKey(obj.Key);
             }
+
+            var deleteResponse = await Client.DeleteObjectsAsync(deleteRequest).ConfigureAwait(false);
         }
     }
 }
