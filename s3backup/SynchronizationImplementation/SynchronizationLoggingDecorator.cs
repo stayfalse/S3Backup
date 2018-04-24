@@ -18,9 +18,17 @@ namespace S3Backup.SynchronizationImplementation
 
         public async Task Synchronize()
         {
-            _log.PutOut($"Synchronization started");
-            await _inner.Synchronize().ConfigureAwait(false);
-            _log.PutOut($"Synchronization completed");
+            try
+            {
+                _log.PutOut($"Synchronization started.");
+                await _inner.Synchronize().ConfigureAwait(false);
+                _log.PutOut($"Synchronization completed.");
+            }
+            catch (Exception exception)
+            {
+                _log.PutError($"Exception occurred: {exception.Message}.");
+                _log.PutOut($"Synchronization can not be completed in case of following exception : {exception.Message}.");
+            }
         }
     }
 }

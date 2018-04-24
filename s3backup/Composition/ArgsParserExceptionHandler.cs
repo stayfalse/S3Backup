@@ -21,7 +21,7 @@ namespace S3Backup.Composition
             {
                 return _inner.Parse(args);
             }
-            catch (IllegalArgumentException exception)
+            catch (Exception exception)
             {
                 _log.PutError($"Exception occurred: {exception.Message}");
                 throw;

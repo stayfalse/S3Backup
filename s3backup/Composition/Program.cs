@@ -41,22 +41,21 @@ namespace S3Backup.Composition
             container.RegisterSingleton<ISynchronization, Synchronization>();
             container.RegisterDecorator<ISynchronization, SynchronizationLoggingDecorator>(Lifestyle.Singleton);
 
-#if DEBUG
-            container.Verify(VerificationOption.VerifyAndDiagnose);
-            var results = Analyzer.Analyze(container);
-            if (results.Length != 0)
-            {
-                throw new DiagnosticVerificationException(results);
-            }
-#endif
             try
             {
+                container.Verify(VerificationOption.VerifyAndDiagnose);
+                var results = Analyzer.Analyze(container);
+                if (results.Length != 0)
+                {
+                    throw new DiagnosticVerificationException(results);
+                }
+
                 await container.GetInstance<ISynchronization>().Synchronize().ConfigureAwait(false);
                 return 0;
             }
             catch (Exception exception)
             {
-                container.GetInstance<ILog<ConsoleLog>>().PutError($"Exception occurred: {exception.Message}");
+                Console.Error.WriteLine($"Unhandled exception occurred: {exception.Message}");
                 return -1;
             }
         }

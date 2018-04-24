@@ -67,8 +67,8 @@ namespace S3Backup.AmazonS3Functionality
             await Initialize().ConfigureAwait(false);
 
             var objectKey = fileInfo.FullName
-                .Remove(0, localPath.Length + 1)
-                .Replace('\\', '/');
+            .Remove(0, localPath.Length + 1)
+            .Replace('\\', '/');
             if (fileInfo.Length <= partSize)
             {
                 var putObjectRequest = new PutObjectRequest
@@ -77,14 +77,8 @@ namespace S3Backup.AmazonS3Functionality
                     Key = objectKey,
                     FilePath = fileInfo.FullName,
                 };
-                try
-                {
-                    var putObjectResponse = await Client.PutObjectAsync(putObjectRequest).ConfigureAwait(false);
-                }
-                catch
-                {
-                    throw;
-                }
+
+                var putObjectResponse = await Client.PutObjectAsync(putObjectRequest).ConfigureAwait(false);
             }
             else
             {
@@ -100,19 +94,12 @@ namespace S3Backup.AmazonS3Functionality
             }
 
             await Initialize().ConfigureAwait(false);
-            try
+            var deleteRequest = new DeleteObjectRequest
             {
-                var deleteRequest = new DeleteObjectRequest
-                {
-                    BucketName = _bucketName,
-                    Key = objectKey,
-                };
-                var deleteResponse = await Client.DeleteObjectAsync(deleteRequest).ConfigureAwait(false);
-            }
-            catch
-            {
-                throw;
-            }
+                BucketName = _bucketName,
+                Key = objectKey,
+            };
+            var deleteResponse = await Client.DeleteObjectAsync(deleteRequest).ConfigureAwait(false);
         }
 
         public async Task Purge(RemotePath prefix)
@@ -122,20 +109,13 @@ namespace S3Backup.AmazonS3Functionality
                 throw new ArgumentNullException(nameof(prefix));
             }
 
-            try
+            var deleteTasks = new List<Task>();
+            foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
             {
-                var deleteTasks = new List<Task>();
-                foreach (var obj in await GetS3ObjectsList(prefix).ConfigureAwait(false))
-                {
-                    deleteTasks.Add(DeleteObject(obj.Key));
-                }
+                deleteTasks.Add(DeleteObject(obj.Key));
+            }
 
-                await Task.WhenAll(deleteTasks).ConfigureAwait(false);
-            }
-            catch
-            {
-                throw;
-            }
+            await Task.WhenAll(deleteTasks).ConfigureAwait(false);
         }
 
         private AmazonS3Client GetClient(ClientInformation config)
@@ -260,19 +240,10 @@ namespace S3Backup.AmazonS3Functionality
             }
 
             await Initialize().ConfigureAwait(false);
-            try
+            var deleteRequest = new DeleteObjectsRequest { BucketName = _bucketName };
+            foreach (var obj in objects)
             {
-                var deleteRequest = new DeleteObjectsRequest { BucketName = _bucketName };
-                foreach (var obj in objects)
-                {
-                    deleteRequest.AddKey(obj.Key);
-                }
-
-                var deleteResponse = await Client.DeleteObjectsAsync(deleteRequest).ConfigureAwait(false);
-            }
-            catch (DeleteObjectsException)
-            {
-                throw;
+                deleteRequest.AddKey(obj.Key);
             }
         }
     }

@@ -41,6 +41,7 @@ namespace S3Backup.AmazonS3Functionality
             try
             {
                 await _inner.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
+                _log.PutOut($"Uploaded");
             }
             catch (ArgumentNullException)
             {
@@ -50,8 +51,6 @@ namespace S3Backup.AmazonS3Functionality
             {
                 _log.PutError($"Exception occurred: {exception.Message}");
             }
-
-            _log.PutOut($"Uploaded");
         }
 
         public async Task DeleteObject(string objectKey)
@@ -60,6 +59,7 @@ namespace S3Backup.AmazonS3Functionality
             try
             {
                 await _inner.DeleteObject(objectKey).ConfigureAwait(false);
+                _log.PutOut($"Deleted.");
             }
             catch (ArgumentNullException)
             {
@@ -69,8 +69,6 @@ namespace S3Backup.AmazonS3Functionality
             {
                 _log.PutError($"Exception occurred: {exception.Message}");
             }
-
-            _log.PutOut($"Deleted.");
         }
 
         public async Task Purge(RemotePath prefix)
@@ -84,6 +82,7 @@ namespace S3Backup.AmazonS3Functionality
             try
             {
                 await _inner.Purge(prefix).ConfigureAwait(false);
+                _log.PutOut($"Purge completed.");
             }
             catch (ArgumentNullException)
             {
@@ -108,8 +107,6 @@ namespace S3Backup.AmazonS3Functionality
             {
                 _log.PutError($"Exception occurred: {exception.Message}");
             }
-
-            _log.PutOut($"Purge completed.");
         }
     }
 }
