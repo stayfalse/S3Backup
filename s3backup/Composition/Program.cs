@@ -16,13 +16,9 @@ namespace S3Backup.Composition
         {
             var container = new Container();
 
-            container.RegisterSingleton<ILog<ConsoleLog>, ConsoleLog>();
-            container.RegisterSingleton<ILog<FileLog>, FileLog>();
-            container.RegisterSingleton<ILog<IArgsParser>, CombinedLog<IArgsParser>>();
-            container.RegisterSingleton<ILog<IAmazonFunctions>, CombinedLog<IAmazonFunctions>>();
-            container.RegisterSingleton<ILog<IAmazonFunctionsDryRunChecker>, CombinedLog<IAmazonFunctionsDryRunChecker>>();
-            container.RegisterSingleton<ILog<ISynchronizationFunctions>, CombinedLog<ISynchronizationFunctions>>();
-            container.RegisterSingleton<ILog<ISynchronization>, CombinedLog<ISynchronization>>();
+            container.RegisterSingleton<IConsoleLog, ConsoleLog>();
+            container.RegisterSingleton<IFileLog, FileLog>();
+            container.Register(typeof(ILog<>), typeof(CombinedLog<>), Lifestyle.Singleton);
             container.RegisterDecorator(typeof(ILog<>), typeof(LogMessageDecorator<>), Lifestyle.Singleton);
 
             container.RegisterSingleton<IArgsParser, ArgsParser>();

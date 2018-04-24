@@ -5,14 +5,14 @@ namespace S3Backup.Logging
     public class CombinedLog<T> : ILog<T>
         where T : class
     {
-        private readonly ILog<FileLog> _fileLog;
-        private readonly ILog<ConsoleLog> _consoleLog;
+        private readonly IFileLog _fileLog;
+        private readonly IConsoleLog _consoleLog;
 
-        public CombinedLog(ILog<FileLog> fileLog, ILog<ConsoleLog> consoleLog)
+        public CombinedLog(IFileLog fileLog, IConsoleLog consoleLog)
         {
-            var f = fileLog as DecoratorBase<ILog<FileLog>>;
+            var f = fileLog as DecoratorBase<IFileLog>;
             _fileLog = (f != null) ? f.GetComponent() : fileLog ?? throw new ArgumentNullException(nameof(fileLog));
-            var c = consoleLog as DecoratorBase<ILog<ConsoleLog>>;
+            var c = consoleLog as DecoratorBase<IConsoleLog>;
             _consoleLog = (c != null) ? c.GetComponent() : consoleLog ?? throw new ArgumentNullException(nameof(consoleLog));
         }
 

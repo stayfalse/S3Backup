@@ -3,7 +3,7 @@ using System.IO;
 
 namespace S3Backup.Logging
 {
-    public class FileLog : ILog<FileLog>
+    public class FileLog : IFileLog
     {
         private const string _path = "log.txt";
 

@@ -4,7 +4,7 @@ using static System.Console;
 
 namespace S3Backup.Logging
 {
-    public class ConsoleLog : ILog<ConsoleLog>
+    public class ConsoleLog : IConsoleLog
     {
         public void PutOut(FormattableString data)
         {
