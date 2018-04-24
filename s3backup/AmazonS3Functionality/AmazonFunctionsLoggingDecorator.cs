@@ -12,9 +12,9 @@ namespace S3Backup.AmazonS3Functionality
         private readonly IAmazonFunctions _inner;
         private readonly ILog<IAmazonFunctions> _log;
 
-        public AmazonFunctionsLoggingDecorator(IAmazonFunctions amazonFunctionsDryRun, ILog<IAmazonFunctions> log)
+        public AmazonFunctionsLoggingDecorator(IAmazonFunctions amazonFunctions, ILog<IAmazonFunctions> log)
         {
-            _inner = amazonFunctionsDryRun ?? throw new ArgumentNullException(nameof(amazonFunctionsDryRun));
+            _inner = amazonFunctions ?? throw new ArgumentNullException(nameof(amazonFunctions));
             _log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
@@ -38,37 +38,15 @@ namespace S3Backup.AmazonS3Functionality
             }
 
             _log.PutOut($"Upload {fileInfo.Name} to bucket started.");
-            try
-            {
-                await _inner.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
-                _log.PutOut($"Uploaded");
-            }
-            catch (ArgumentNullException)
-            {
-                throw;
-            }
-            catch (Exception exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-            }
+            await _inner.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
+            _log.PutOut($"Uploaded");
         }
 
         public async Task DeleteObject(string objectKey)
         {
             _log.PutOut($"Delete object {objectKey}.");
-            try
-            {
-                await _inner.DeleteObject(objectKey).ConfigureAwait(false);
-                _log.PutOut($"Deleted.");
-            }
-            catch (ArgumentNullException)
-            {
-                throw;
-            }
-            catch (Exception exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-            }
+            await _inner.DeleteObject(objectKey).ConfigureAwait(false);
+            _log.PutOut($"Deleted.");
         }
 
         public async Task Purge(RemotePath prefix)
@@ -79,34 +57,8 @@ namespace S3Backup.AmazonS3Functionality
             }
 
             _log.PutOut($"Purge bucket with remote path {prefix}");
-            try
-            {
-                await _inner.Purge(prefix).ConfigureAwait(false);
-                _log.PutOut($"Purge completed.");
-            }
-            catch (ArgumentNullException)
-            {
-                throw;
-            }
-            catch (Amazon.S3.DeleteObjectsException exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-                var errorResponse = exception.Response;
-
-                foreach (var deletedObject in errorResponse.DeletedObjects)
-                {
-                    _log.PutError($"Deleted item  {deletedObject.Key}");
-                }
-
-                foreach (var deleteError in errorResponse.DeleteErrors)
-                {
-                    _log.PutError($"Error deleting item {deleteError.Key} Code - {deleteError.Code} Message - {deleteError.Message}");
-                }
-            }
-            catch (Exception exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-            }
+            await _inner.Purge(prefix).ConfigureAwait(false);
+            _log.PutOut($"Purge completed.");
         }
     }
 }
