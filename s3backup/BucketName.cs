@@ -7,7 +7,7 @@ namespace S3Backup
         public const int MaxLength = 100;
 
         public BucketName(string value)
-             : base(value, MaxLength)
+             : base(value, (string path) => true, MaxLength)
         {
         }
     }
