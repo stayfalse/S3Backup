@@ -25,10 +25,7 @@ namespace S3Backup.Logging
         public void PutError(FormattableString data)
         {
             _fileLog.PutError(data);
-            if (Enum.TryParse(typeof(ConsoleLogClasses), typeof(T).Name, true, out var t))
-            {
-                _consoleLog.PutError(data);
-            }
+            _consoleLog.PutError(data);
         }
 
         public void PutOut(FormattableString data)
