@@ -127,7 +127,7 @@ namespace S3Backup.AmazonS3Functionality
 
             var s3Config = new AmazonS3Config
             {
-                ServiceURL = config.ServiceUrl,
+                ServiceURL = config.ServiceUrl.AbsoluteUri,
             };
             return new AmazonS3Client(config.AccessKey, config.SecretKey, s3Config);
         }

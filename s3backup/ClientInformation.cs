@@ -2,7 +2,7 @@
 {
     public sealed class ClientInformation
     {
-        public string ServiceUrl { get; set; }
+        public System.Uri ServiceUrl { get; set; }
 
         public string AccessKey { get; set; }
 
