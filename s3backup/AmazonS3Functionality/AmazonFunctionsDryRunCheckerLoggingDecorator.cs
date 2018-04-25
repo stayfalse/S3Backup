@@ -25,7 +25,7 @@ namespace S3Backup.AmazonS3Functionality
                 throw new ArgumentNullException(nameof(fileInfo));
             }
 
-            _log.PutOut($"Try upload object to bucket.");
+            _log.PutOut($"Try upload {fileInfo.Name} to bucket.");
             if (!await _inner.TryUploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false))
             {
                 _log.PutOut($"{fileInfo.Name} upload skipped.");
@@ -35,9 +35,9 @@ namespace S3Backup.AmazonS3Functionality
             return true;
         }
 
-        public async Task<bool> TryUploadObjects(IReadOnlyCollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
+        public async Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
         {
-            _log.PutOut($"Try upload multiple objects. ({filesInfo.Count} files are missing.)");
+            _log.PutOut($"Try upload multiple objects.");
             foreach (var fileInfo in filesInfo)
             {
                 if (!await _inner.TryUploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false))
@@ -52,7 +52,7 @@ namespace S3Backup.AmazonS3Functionality
 
         public async Task<bool> TryDeleteObject(string objectKey)
         {
-            _log.PutOut($"Try delete mismatching object {objectKey}.");
+            _log.PutOut($"Try delete object {objectKey}.");
             if (!await _inner.TryDeleteObject(objectKey).ConfigureAwait(false))
             {
                 _log.PutOut($"{objectKey} object deletion skipped.");

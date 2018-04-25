@@ -12,7 +12,7 @@ namespace S3Backup.AmazonS3Functionality
 
         Task Purge(RemotePath prefix);
 
-        Task UploadObjects(IReadOnlyCollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize);
+        Task UploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize);
 
         Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize);
     }

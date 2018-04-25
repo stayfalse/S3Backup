@@ -1,14 +1,23 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace S3Backup.SynchronizationImplementation
 {
     public interface ISynchronizationFunctions
     {
-        Dictionary<string, FileInfo> GetFiles(LocalPath localPath);
+        Task DeleteExcessObject(S3ObjectInfo s3Object);
 
-        bool EqualSize(S3ObjectInfo s3Object, FileInfo fileInfo);
+        bool FileEqualsObject(FileInfo fileInfo, S3ObjectInfo s3Object);
 
-        bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo, PartSize partSize);
+        Dictionary<string, FileInfo> GetFilesDictionary();
+
+        Task<IEnumerable<S3ObjectInfo>> GetObjectsList();
+
+        Task Purge();
+
+        Task UploadMismatchedFile(FileInfo fileInfo);
+
+        Task UploadMissingFiles(IReadOnlyCollection<FileInfo> filesInfo);
     }
 }

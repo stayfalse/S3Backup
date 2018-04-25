@@ -1,22 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
+using System.Threading.Tasks;
 
-using static System.FormattableString;
+using S3Backup.AmazonS3Functionality;
 
 namespace S3Backup.SynchronizationImplementation
 {
     public class SynchronizationFunctions : ISynchronizationFunctions
     {
-        public Dictionary<string, FileInfo> GetFiles(LocalPath localPath)
+        private readonly Options _options;
+        private readonly IAmazonFunctionsForSynchronization _amazonFunctions;
+        private readonly IComparisonFunctions _comparisonFunctions;
+
+        public SynchronizationFunctions(IOptionsSource optionsSource, IAmazonFunctionsForSynchronization amazonFunctions, IComparisonFunctions comparisonFunctions)
         {
-            if (localPath is null)
+            if (optionsSource is null)
             {
-                throw new ArgumentNullException(nameof(localPath));
+                throw new ArgumentNullException(nameof(optionsSource));
             }
 
-            var files = new DirectoryInfo(localPath)
+            _options = optionsSource.Options;
+            _amazonFunctions = amazonFunctions ?? throw new ArgumentNullException(nameof(amazonFunctions));
+            _comparisonFunctions = comparisonFunctions ?? throw new ArgumentNullException(nameof(comparisonFunctions));
+        }
+
+        public async Task Purge()
+        {
+            if ((_options.OptionCases & OptionCases.Purge) == OptionCases.Purge)
+            {
+                await _amazonFunctions.Purge(_options.RemotePath).ConfigureAwait(false);
+            }
+        }
+
+        public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList()
+        {
+            return await _amazonFunctions.GetObjectsList(_options.RemotePath).ConfigureAwait(false);
+        }
+
+        public Dictionary<string, FileInfo> GetFilesDictionary()
+        {
+            var files = new DirectoryInfo(_options.LocalPath)
                 .GetFiles("*", SearchOption.AllDirectories);
             var filesInfo = new Dictionary<string, FileInfo>();
             foreach (var fileInfo in files)
@@ -27,79 +51,54 @@ namespace S3Backup.SynchronizationImplementation
             return filesInfo;
         }
 
-        public bool EqualSize(S3ObjectInfo s3Object, FileInfo fileInfo)
+        public bool FileEqualsObject(FileInfo fileInfo, S3ObjectInfo s3Object)
+        {
+            if (_comparisonFunctions.EqualSize(s3Object, fileInfo))
+            {
+                if ((_options.OptionCases & OptionCases.SizeOnly) != OptionCases.SizeOnly)
+                {
+                    return _comparisonFunctions.EqualETag(s3Object, fileInfo, _options.PartSize);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task DeleteExcessObject(S3ObjectInfo s3Object)
         {
             if (s3Object is null)
             {
                 throw new ArgumentNullException(nameof(s3Object));
             }
 
-            if (fileInfo is null)
+            if (s3Object.LastModified < _options.ThresholdDate)
             {
-                throw new ArgumentNullException(nameof(fileInfo));
+                await _amazonFunctions.DeleteObject(s3Object.Key).ConfigureAwait(false);
             }
-
-            return s3Object.Size == fileInfo.Length;
         }
 
-        public bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo, PartSize partSize)
+        public async Task UploadMismatchedFile(FileInfo fileInfo)
         {
-            if (s3Object is null)
-            {
-                throw new ArgumentNullException(nameof(s3Object));
-            }
-
-            return string.Equals(s3Object.ETag, ComputeLocalETag(fileInfo, partSize), StringComparison.Ordinal);
+            await _amazonFunctions
+                           .UploadObjectToBucket(fileInfo, _options.LocalPath, _options.PartSize)
+                           .ConfigureAwait(false);
         }
 
-        private static string ComputeLocalETag(FileInfo fileInfo, PartSize partSize)
+        public async Task UploadMissingFiles(IReadOnlyCollection<FileInfo> filesInfo)
         {
-            if (fileInfo is null)
+            if (filesInfo is null)
             {
-                throw new ArgumentNullException(nameof(fileInfo));
+                throw new ArgumentNullException(nameof(filesInfo));
             }
 
-            if (partSize is null)
+            if (filesInfo.Count > 0)
             {
-                throw new ArgumentNullException(nameof(partSize));
+                await _amazonFunctions
+                  .UploadObjects(filesInfo, _options.LocalPath, _options.PartSize)
+                  .ConfigureAwait(false);
             }
-
-            var localETag = "";
-            using (var md5 = MD5.Create())
-            {
-                var br = new BinaryReader(new FileStream(fileInfo.FullName, FileMode.Open));
-                var sumIndex = 0;
-                var parts = 0;
-                var hashLength = md5.HashSize / 8;
-                var n = ((fileInfo.Length / partSize) * hashLength) + ((fileInfo.Length % partSize != 0) ? hashLength : 0);
-                var sum = new byte[n];
-                var a = (fileInfo.Length > partSize) ? partSize : (int)fileInfo.Length;
-                while (sumIndex < sum.Length)
-                {
-                    md5.ComputeHash(br.ReadBytes(a)).CopyTo(sum, sumIndex);
-                    parts++;
-                    if (parts * partSize > fileInfo.Length)
-                    {
-                        a = (int)fileInfo.Length % partSize;
-                    }
-
-                    sumIndex += hashLength;
-                }
-
-                if (parts > 1)
-                {
-                    sum = md5.ComputeHash(sum);
-                }
-
-                for (var i = 0; i < sum.Length; i++)
-                {
-                    localETag = Invariant($"{localETag}{sum[i]:x2}");
-                }
-
-                localETag = Invariant($"\"{localETag}{((parts > 1) ? $"-{parts}\"" : "\"")}");
-            }
-
-            return localETag;
         }
     }
 }

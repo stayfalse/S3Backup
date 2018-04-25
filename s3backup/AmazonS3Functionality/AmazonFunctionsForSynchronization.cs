@@ -26,7 +26,7 @@ namespace S3Backup.AmazonS3Functionality
             await _dryRun.TryDeleteObject(objectKey).ConfigureAwait(false);
         }
 
-        public async Task UploadObjects(IReadOnlyCollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
+        public async Task UploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
         {
             await _dryRun.TryUploadObjects(filesInfo, localPath, partSize).ConfigureAwait(false);
         }

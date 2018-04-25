@@ -32,9 +32,10 @@ namespace S3Backup.Composition
             container.RegisterDecorator<IAmazonFunctionsDryRunChecker, AmazonFunctionsDryRunCheckerLoggingDecorator>(Lifestyle.Singleton);
             container.RegisterSingleton<IAmazonFunctionsForSynchronization, AmazonFunctionsForSynchronization>();
 
+            container.RegisterSingleton<IComparisonFunctions, ComparisonFunctions>();
+            container.RegisterDecorator<IComparisonFunctions, ComparisonFunctionsLoggingDecorator>(Lifestyle.Singleton);
             container.RegisterSingleton<ISynchronizationFunctions, SynchronizationFunctions>();
             container.RegisterDecorator<ISynchronizationFunctions, SynchronizationFunctionsLoggingDecorator>(Lifestyle.Singleton);
-
             container.RegisterSingleton<ISynchronization, Synchronization>();
             container.RegisterDecorator<ISynchronization, SynchronizationLoggingDecorator>(Lifestyle.Singleton);
 

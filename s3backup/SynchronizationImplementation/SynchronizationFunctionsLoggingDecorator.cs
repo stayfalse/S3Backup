@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 using S3Backup.Logging;
 
@@ -11,25 +12,32 @@ namespace S3Backup.SynchronizationImplementation
         private readonly ISynchronizationFunctions _inner;
         private readonly ILog<ISynchronizationFunctions> _log;
 
-        public SynchronizationFunctionsLoggingDecorator(ISynchronizationFunctions inner, ILog<ISynchronizationFunctions> log)
+        public SynchronizationFunctionsLoggingDecorator(ISynchronizationFunctions synchronizationFunctions, ILog<ISynchronizationFunctions> log)
         {
-            _inner = inner;
+            _inner = synchronizationFunctions ?? throw new ArgumentNullException(nameof(synchronizationFunctions));
             _log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
-        public Dictionary<string, FileInfo> GetFiles(LocalPath localPath)
+        public Dictionary<string, FileInfo> GetFilesDictionary()
         {
-            if (localPath is null)
-            {
-                throw new ArgumentNullException(nameof(localPath));
-            }
-
-            var files = _inner.GetFiles(localPath);
-            _log.PutOut($"FileInfo dictionary received. (LocalPath: {localPath})");
+            _log.PutOut($"Try to receive files dictionary.");
+            var files = _inner.GetFilesDictionary();
+            _log.PutOut($"FileInfo dictionary received.");
             return files;
         }
 
-        public bool EqualSize(S3ObjectInfo s3Object, FileInfo fileInfo)
+        public async Task DeleteExcessObject(S3ObjectInfo s3Object)
+        {
+            if (s3Object is null)
+            {
+                throw new ArgumentNullException(nameof(s3Object));
+            }
+
+            _log.PutOut($"Local directory does not contain file {s3Object.Key}.");
+            await _inner.DeleteExcessObject(s3Object).ConfigureAwait(false);
+        }
+
+        public bool FileEqualsObject(FileInfo fileInfo, S3ObjectInfo s3Object)
         {
             if (s3Object is null)
             {
@@ -41,38 +49,47 @@ namespace S3Backup.SynchronizationImplementation
                 throw new ArgumentNullException(nameof(fileInfo));
             }
 
-            _log.PutOut($"Size comparison file {fileInfo.Name} and S3Object {s3Object.Key} started.");
-            if (_inner.EqualSize(s3Object, fileInfo))
+            _log.PutOut($"Comparison of file {fileInfo.Name} and S3Object {s3Object.Key} started.");
+            if (_inner.FileEqualsObject(fileInfo, s3Object))
             {
-                _log.PutOut($"Size {s3Object.Key} {fileInfo.Name} matched.");
+                _log.PutOut($"File {fileInfo.Name} matches object {s3Object.Key}.");
                 return true;
             }
 
-            _log.PutOut($"File {fileInfo.Name} size does not match S3Object {s3Object.Key}.");
             return false;
         }
 
-        public bool EqualETag(S3ObjectInfo s3Object, FileInfo fileInfo, PartSize partSize)
+        public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList()
         {
-            if (s3Object is null)
-            {
-                throw new ArgumentNullException(nameof(s3Object));
-            }
+            _log.PutOut($"Try to receive S3Objects list.");
+            return await _inner.GetObjectsList().ConfigureAwait(false);
+        }
 
+        public async Task Purge()
+        {
+            await _inner.Purge().ConfigureAwait(false);
+        }
+
+        public async Task UploadMismatchedFile(FileInfo fileInfo)
+        {
             if (fileInfo is null)
             {
                 throw new ArgumentNullException(nameof(fileInfo));
             }
 
-            _log.PutOut($"Hash comparison file {fileInfo.Name} and S3Object {s3Object.Key} started.");
-            if (_inner.EqualETag(s3Object, fileInfo, partSize))
+            _log.PutOut($"File {fileInfo.Name} does not match object.");
+            await _inner.UploadMismatchedFile(fileInfo).ConfigureAwait(false);
+        }
+
+        public async Task UploadMissingFiles(IReadOnlyCollection<FileInfo> filesInfo)
+        {
+            if (filesInfo is null)
             {
-                _log.PutOut($"Hash {s3Object.Key} {fileInfo.Name} matched.");
-                return true;
+                throw new ArgumentNullException(nameof(filesInfo));
             }
 
-            _log.PutOut($"File {fileInfo.Name} hash does not match S3Object {s3Object.Key}.");
-            return false;
+            _log.PutOut($"{filesInfo.Count} files are missing.");
+            await _inner.UploadMissingFiles(filesInfo).ConfigureAwait(false);
         }
     }
 }

@@ -33,7 +33,7 @@ namespace S3Backup.AmazonS3Functionality
             return !_dryRun;
         }
 
-        public async Task<bool> TryUploadObjects(IReadOnlyCollection<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
+        public async Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
         {
             if (!_dryRun)
             {

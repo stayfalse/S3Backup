@@ -19,7 +19,9 @@ namespace S3Backup.Logging
         private enum ConsoleLogClasses
         {
             ISynchronization,
+            ISynchronizationFunctions,
             IAmazonFunctionsDryRunChecker,
+            IAmazonFunctions,
         }
 
         public void PutError(FormattableString data)
