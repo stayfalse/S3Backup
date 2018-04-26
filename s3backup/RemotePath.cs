@@ -7,7 +7,7 @@ namespace S3Backup
         public const int MaxLength = 100;
 
         public RemotePath(string value)
-             : base(value, (string path) => true, MaxLength)
+             : base(value, (string path) => true, maxLength: MaxLength)
         {
         }
     }

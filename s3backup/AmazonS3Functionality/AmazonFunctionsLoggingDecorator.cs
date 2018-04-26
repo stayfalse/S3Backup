@@ -25,9 +25,9 @@ namespace S3Backup.AmazonS3Functionality
                 throw new ArgumentNullException(nameof(prefix));
             }
 
-            var objectsList = _inner.GetObjectsList(prefix);
+            var objectsList = await _inner.GetObjectsList(prefix).ConfigureAwait(false);
             _log.PutOut($"S3Objects list received. (RemotePath: {prefix})");
-            return await objectsList.ConfigureAwait(false);
+            return objectsList;
         }
 
         public async Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)

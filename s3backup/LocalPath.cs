@@ -7,7 +7,7 @@ namespace S3Backup
         public const int MaxLength = 100;
 
         public LocalPath(string value)
-             : base(value, (string path) => Validate(path), MaxLength)
+             : base(value, (string path) => Validate(path), maxLength: MaxLength)
         {
         }
 
