@@ -7,13 +7,20 @@ namespace S3Backup.Logging
     {
         private readonly IFileLog _fileLog;
         private readonly IConsoleLog _consoleLog;
+        private readonly bool _verbose;
 
-        public CombinedLog(IFileLog fileLog, IConsoleLog consoleLog)
+        public CombinedLog(IFileLog fileLog, IConsoleLog consoleLog, IOptionsSource optionsSource)
         {
+            if (optionsSource is null)
+            {
+                throw new ArgumentNullException(nameof(optionsSource));
+            }
+
             var f = fileLog as DecoratorBase<IFileLog>;
             _fileLog = (f != null) ? f.GetComponent() : fileLog ?? throw new ArgumentNullException(nameof(fileLog));
             var c = consoleLog as DecoratorBase<IConsoleLog>;
             _consoleLog = (c != null) ? c.GetComponent() : consoleLog ?? throw new ArgumentNullException(nameof(consoleLog));
+            _verbose = optionsSource.LogOptions.Verbose;
         }
 
         private enum ConsoleLogClasses
@@ -33,7 +40,7 @@ namespace S3Backup.Logging
         public void PutOut(FormattableString data)
         {
             _fileLog.PutOut(data);
-            if (Enum.TryParse(typeof(ConsoleLogClasses), typeof(T).Name, true, out var t))
+            if (_verbose || Enum.TryParse(typeof(ConsoleLogClasses), typeof(T).Name, true, out var t))
             {
                 _consoleLog.PutOut(data);
             }

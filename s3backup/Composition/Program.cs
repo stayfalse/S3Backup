@@ -22,7 +22,6 @@ namespace S3Backup.Composition
             container.RegisterDecorator(typeof(ILog<>), typeof(LogMessageDecorator<>), Lifestyle.Singleton);
 
             container.RegisterSingleton<IArgsParser, ArgsParser>();
-            container.RegisterDecorator<IArgsParser, ArgsParserExceptionHandler>(Lifestyle.Singleton);
             container.RegisterSingleton<IOptionsSource>(() => new OptionsSource(args, container.GetInstance<IArgsParser>()));
 
             container.RegisterSingleton<IAmazonFunctions, UseAmazon>();

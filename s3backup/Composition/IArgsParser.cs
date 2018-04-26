@@ -2,6 +2,6 @@
 {
     public interface IArgsParser
     {
-        (Options, AmazonOptions) Parse(string[] args);
+        (Options, AmazonOptions, LogOptions) Parse(string[] args);
     }
 }

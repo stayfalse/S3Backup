@@ -5,7 +5,17 @@ namespace S3Backup.Logging
 {
     public class FileLog : IFileLog
     {
-        private const string _path = "log.txt";
+        private readonly LogFilePath _path;
+
+        public FileLog(IOptionsSource optionsSource)
+        {
+            if (optionsSource is null)
+            {
+                throw new ArgumentNullException(nameof(optionsSource));
+            }
+
+            _path = optionsSource.LogOptions.LogFilePath;
+        }
 
         public void PutError(FormattableString data)
         {

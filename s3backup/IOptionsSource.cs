@@ -5,5 +5,7 @@
         Options Options { get; }
 
         AmazonOptions AmazonOptions { get; }
+
+        LogOptions LogOptions { get; }
     }
 }

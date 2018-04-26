@@ -9,6 +9,8 @@ namespace S3Backup.Composition
     {
         private string _configFile;
 
+        private string _logFile;
+
         private int _parallelParts;
 
         private int _partSize;
@@ -27,6 +29,8 @@ namespace S3Backup.Composition
 
         private RemotePath RemotePath { get; set; }
 
+        private LogFilePath LogFilePath => string.IsNullOrEmpty(_logFile) ? new LogFilePath("log.txt") : new LogFilePath(_logFile);
+
         private string ConfigFile
         {
             get => string.IsNullOrEmpty(_configFile) ? "appsettings.json" : _configFile;
@@ -35,7 +39,7 @@ namespace S3Backup.Composition
 
         private ClientInformation ClientInformation => GetClient();
 
-        public (Options, AmazonOptions) Parse(string[] args)
+        public (Options, AmazonOptions, LogOptions) Parse(string[] args)
         {
             var app = new CommandLineApplication { Name = "S3Backup" };
             app.HelpOption("-?|-h|--help");
@@ -50,8 +54,11 @@ namespace S3Backup.Composition
             var partSize = app.Option("-ps | --partSize", "Set Part Size in megabytes (default is 250 MB)", CommandOptionType.SingleValue);
 
             var sizeOnly = app.Option("-s  | --sizeonly", "Do not compare checksums", CommandOptionType.NoValue);
-            var purge = app.Option("-p  | --purge", "Purge bucket contents before synchronizing (CAUTION!)", CommandOptionType.NoValue);
+            var purge = app.Option("--purge", "Purge bucket contents before synchronizing (CAUTION!)", CommandOptionType.NoValue);
             var dryRun = app.Option("-d  | --dryRun", "Initialize dry run", CommandOptionType.NoValue);
+
+            var verbose = app.Option("-v  | --verbose", "Initialize verbose logging", CommandOptionType.NoValue);
+            var logFilePath = app.Option("-lf | --logFile", "Set log file path (default is log.txt)", CommandOptionType.SingleValue);
 
             app.Execute(args);
 
@@ -72,6 +79,7 @@ namespace S3Backup.Composition
                     BucketName = new BucketName(bucketName.Value());
                     RemotePath = new RemotePath(remotePath.Value());
                     ConfigFile = configFile.Value();
+                    _logFile = logFilePath.Value();
 
                     if (sizeOnly.HasValue())
                     {
@@ -85,7 +93,7 @@ namespace S3Backup.Composition
                 }
 
                 return (new Options(optionCases, LocalPath, RemotePath, PartSize, Threshold, ParallelParts),
-                    new AmazonOptions(ClientInformation, BucketName, dryRun.HasValue()));
+                    new AmazonOptions(ClientInformation, BucketName, dryRun.HasValue()), new LogOptions(LogFilePath, verbose.HasValue()));
             }
             catch (IllegalArgumentException)
             {
