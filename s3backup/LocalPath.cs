@@ -7,8 +7,21 @@ namespace S3Backup
         public const int MaxLength = 100;
 
         public LocalPath(string value)
-             : base(value, (string path) => System.IO.Directory.Exists(path), MaxLength)
+             : base(value, (string path) => Validate(path), MaxLength)
         {
+        }
+
+        private static bool Validate(string path)
+        {
+            try
+            {
+                System.IO.Path.GetFullPath(path);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
