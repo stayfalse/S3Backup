@@ -12,6 +12,7 @@ namespace S3Backup.AmazonS3Functionality
     internal sealed class UseAmazon : IAmazonFunctions
     {
         private readonly BucketName _bucketName;
+        private readonly ParallelParts _parallelParts;
         private readonly Lazy<AmazonS3Client> _client;
         private readonly Lazy<Task> _initializer;
 
@@ -25,6 +26,7 @@ namespace S3Backup.AmazonS3Functionality
             var options = optionsSource.AmazonOptions;
             _client = new Lazy<AmazonS3Client>(GetClient(options.ClientInformation));
             _bucketName = options.BucketName;
+            _parallelParts = options.ParallelParts;
             _initializer = new Lazy<Task>(DoInitialize());
         }
 
@@ -188,7 +190,8 @@ namespace S3Backup.AmazonS3Functionality
             var a = (fileInfo.Length > partSize) ? partSize : (int)fileInfo.Length;
             try
             {
-                var list = new List<Task<UploadPartResponse>>();
+                var taskList = new List<Task<UploadPartResponse>>();
+                var partResponses = new List<UploadPartResponse>();
                 for (var i = 0; partSize * i < fileInfo.Length; i++)
                 {
                     var upload = new UploadPartRequest()
@@ -206,17 +209,36 @@ namespace S3Backup.AmazonS3Functionality
                         a = (int)fileInfo.Length % partSize;
                     }
 
-                    list.Add(Client.UploadPartAsync(upload));
+                    if (taskList.Count >= _parallelParts)
+                    {
+                        await Task.WhenAny(taskList).ConfigureAwait(false);
+                        foreach (var task in taskList)
+                        {
+                            if (task.IsCompleted)
+                            {
+                                partResponses.Add(await task.ConfigureAwait(false));
+                                taskList.Remove(task);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        taskList.Add(Client.UploadPartAsync(upload));
+                    }
                 }
 
-                var partResponses = Task.WhenAll(list);
+                foreach (var task in taskList)
+                {
+                    partResponses.Add(await task.ConfigureAwait(false));
+                }
+
                 var completeRequest = new CompleteMultipartUploadRequest
                 {
                     BucketName = _bucketName,
                     Key = objectKey,
                     UploadId = multipartUploadResponse.UploadId,
                 };
-                completeRequest.AddPartETags(await partResponses.ConfigureAwait(false));
+                completeRequest.AddPartETags(partResponses);
                 var completeUploadResponse = await Client.CompleteMultipartUploadAsync(completeRequest).ConfigureAwait(false);
             }
             catch
