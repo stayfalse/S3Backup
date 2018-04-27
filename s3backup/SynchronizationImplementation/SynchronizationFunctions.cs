@@ -45,7 +45,7 @@ namespace S3Backup.SynchronizationImplementation
             var filesInfo = new Dictionary<string, FileInfo>();
             foreach (var fileInfo in files)
             {
-                filesInfo.Add(fileInfo.Name, fileInfo);
+                filesInfo.Add(fileInfo.FullName.Remove(0, Path.GetFullPath(_options.LocalPath).Length + 1).Replace('\\', '/'), fileInfo);
             }
 
             return filesInfo;

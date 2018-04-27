@@ -69,8 +69,8 @@ namespace S3Backup.AmazonS3Functionality
             await Initialize().ConfigureAwait(false);
 
             var objectKey = fileInfo.FullName
-            .Remove(0, localPath.Length + 1)
-            .Replace('\\', '/');
+                .Remove(0, Path.GetFullPath(localPath).Length + 1)
+                .Replace('\\', '/');
             if (fileInfo.Length <= partSize)
             {
                 var putObjectRequest = new PutObjectRequest
