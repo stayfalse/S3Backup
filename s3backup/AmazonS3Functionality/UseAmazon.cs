@@ -178,11 +178,6 @@ namespace S3Backup.AmazonS3Functionality
                 throw new ArgumentNullException(nameof(partSize));
             }
 
-            if (_parallelParts is null)
-            {
-                throw new ArgumentNullException(nameof(_parallelParts));
-            }
-
             var multipartUploadRequest = new InitiateMultipartUploadRequest()
             {
                 BucketName = _bucketName,
@@ -195,39 +190,47 @@ namespace S3Backup.AmazonS3Functionality
             var a = (fileInfo.Length > partSize) ? partSize : (int)fileInfo.Length;
             try
             {
+                var taskList = new List<Task<UploadPartResponse>>();
                 var partResponses = new List<UploadPartResponse>();
-                var parallelOptions = new ParallelOptions
+                for (var i = 0; partSize * i < fileInfo.Length; i++)
                 {
-                    MaxDegreeOfParallelism = Environment.ProcessorCount,
-                };
-
-                Parallel.For(0, (fileInfo.Length / partSize) + 1, parallelOptions, async (i) =>
-                {
-                    Console.WriteLine($"try to upload part {i}");
-                    using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, a, true)
+                    var upload = new UploadPartRequest()
                     {
-                        Position = partSize * i,
-                    })
+                        BucketName = _bucketName,
+                        Key = objectKey,
+                        UploadId = multipartUploadResponse.UploadId,
+                        PartNumber = i + 1,
+                        PartSize = a,
+                        FilePosition = partSize * i,
+                        FilePath = fileInfo.FullName,
+                    };
+                    if ((i + 1) * partSize > fileInfo.Length)
                     {
-                        var upload = new UploadPartRequest()
-                        {
-                            BucketName = _bucketName,
-                            Key = objectKey,
-                            UploadId = multipartUploadResponse.UploadId,
-                            PartNumber = (int)i + 1,
-                            PartSize = a,
-                            InputStream = stream,
-                        };
-                        if ((i + 1) * partSize > fileInfo.Length)
-                        {
-                            a = (int)fileInfo.Length % partSize;
-                        }
-
-                        partResponses.Add(await Client.UploadPartAsync(upload).ConfigureAwait(false));
+                        a = (int)fileInfo.Length % partSize;
                     }
 
-                    Console.WriteLine($"uploaded part {i}");
-                });
+                    if (taskList.Count >= _parallelParts)
+                    {
+                        await Task.WhenAny(taskList).ConfigureAwait(false);
+                        foreach (var task in taskList)
+                        {
+                            if (task.IsCompleted)
+                            {
+                                partResponses.Add(await task.ConfigureAwait(false));
+                                taskList.Remove(task);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        taskList.Add(Client.UploadPartAsync(upload));
+                    }
+                }
+
+                foreach (var task in taskList)
+                {
+                    partResponses.Add(await task.ConfigureAwait(false));
+                }
 
                 var completeRequest = new CompleteMultipartUploadRequest
                 {

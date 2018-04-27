@@ -2,7 +2,6 @@
 
 namespace S3Backup
 {
-
     public sealed class LogOptions
     {
         public LogOptions(LogFilePath logFilePath, bool verbose)
