@@ -12,6 +12,7 @@ namespace S3Backup.AmazonS3Functionality
     internal sealed class UseAmazon : IAmazonFunctions
     {
         private readonly BucketName _bucketName;
+        private readonly ParallelParts _parallelParts;
         private readonly Lazy<AmazonS3Client> _client;
         private readonly Lazy<Task> _initializer;
 
@@ -25,6 +26,7 @@ namespace S3Backup.AmazonS3Functionality
             var options = optionsSource.AmazonOptions;
             _client = new Lazy<AmazonS3Client>(GetClient(options.ClientInformation));
             _bucketName = options.BucketName;
+            _parallelParts = options.ParallelParts;
             _initializer = new Lazy<Task>(DoInitialize());
         }
 
@@ -176,6 +178,11 @@ namespace S3Backup.AmazonS3Functionality
                 throw new ArgumentNullException(nameof(partSize));
             }
 
+            if (_parallelParts is null)
+            {
+                throw new ArgumentNullException(nameof(_parallelParts));
+            }
+
             var multipartUploadRequest = new InitiateMultipartUploadRequest()
             {
                 BucketName = _bucketName,
@@ -188,35 +195,47 @@ namespace S3Backup.AmazonS3Functionality
             var a = (fileInfo.Length > partSize) ? partSize : (int)fileInfo.Length;
             try
             {
-                var list = new List<Task<UploadPartResponse>>();
-                for (var i = 0; partSize * i < fileInfo.Length; i++)
+                var partResponses = new List<UploadPartResponse>();
+                var parallelOptions = new ParallelOptions
                 {
-                    var upload = new UploadPartRequest()
+                    MaxDegreeOfParallelism = Environment.ProcessorCount,
+                };
+
+                Parallel.For(0, (fileInfo.Length / partSize) + 1, parallelOptions, async (i) =>
+                {
+                    Console.WriteLine($"try to upload part {i}");
+                    using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, a, true)
                     {
-                        BucketName = _bucketName,
-                        Key = objectKey,
-                        UploadId = multipartUploadResponse.UploadId,
-                        PartNumber = i + 1,
-                        PartSize = a,
-                        FilePosition = partSize * i,
-                        FilePath = fileInfo.FullName,
-                    };
-                    if ((i + 1) * partSize > fileInfo.Length)
+                        Position = partSize * i,
+                    })
                     {
-                        a = (int)fileInfo.Length % partSize;
+                        var upload = new UploadPartRequest()
+                        {
+                            BucketName = _bucketName,
+                            Key = objectKey,
+                            UploadId = multipartUploadResponse.UploadId,
+                            PartNumber = (int)i + 1,
+                            PartSize = a,
+                            InputStream = stream,
+                        };
+                        if ((i + 1) * partSize > fileInfo.Length)
+                        {
+                            a = (int)fileInfo.Length % partSize;
+                        }
+
+                        partResponses.Add(await Client.UploadPartAsync(upload).ConfigureAwait(false));
                     }
 
-                    list.Add(Client.UploadPartAsync(upload));
-                }
+                    Console.WriteLine($"uploaded part {i}");
+                });
 
-                var partResponses = Task.WhenAll(list);
                 var completeRequest = new CompleteMultipartUploadRequest
                 {
                     BucketName = _bucketName,
                     Key = objectKey,
                     UploadId = multipartUploadResponse.UploadId,
                 };
-                completeRequest.AddPartETags(await partResponses.ConfigureAwait(false));
+                completeRequest.AddPartETags(partResponses);
                 var completeUploadResponse = await Client.CompleteMultipartUploadAsync(completeRequest).ConfigureAwait(false);
             }
             catch

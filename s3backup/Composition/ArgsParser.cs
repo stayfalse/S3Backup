@@ -92,8 +92,8 @@ namespace S3Backup.Composition
                     }
                 }
 
-                return (new Options(optionCases, LocalPath, RemotePath, PartSize, Threshold, ParallelParts),
-                    new AmazonOptions(ClientInformation, BucketName, dryRun.HasValue()), new LogOptions(LogFilePath, verbose.HasValue()));
+                return (new Options(optionCases, LocalPath, RemotePath, PartSize, Threshold),
+                    new AmazonOptions(ClientInformation, BucketName, ParallelParts, dryRun.HasValue()), new LogOptions(LogFilePath, verbose.HasValue()));
             }
             catch (IllegalArgumentException)
             {
