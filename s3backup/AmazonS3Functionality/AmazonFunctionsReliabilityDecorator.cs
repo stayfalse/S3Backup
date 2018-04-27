@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
+using Amazon.S3;
+
 using S3Backup.Logging;
 
 namespace S3Backup.AmazonS3Functionality
@@ -29,7 +31,7 @@ namespace S3Backup.AmazonS3Functionality
                 _log.PutError($"Exception occurred: {exception.Message}");
                 throw;
             }
-            catch (Exception exception)
+            catch (AmazonS3Exception exception)
             {
                 _log.PutError($"Exception occurred: {exception.Message}");
             }
@@ -51,7 +53,7 @@ namespace S3Backup.AmazonS3Functionality
                 _log.PutError($"Exception occurred: {exception.Message}");
                 throw;
             }
-            catch (Amazon.S3.DeleteObjectsException exception)
+            catch (DeleteObjectsException exception)
             {
                 _log.PutError($"Exception occurred: {exception.Message}");
                 var errorResponse = exception.Response;
@@ -66,7 +68,7 @@ namespace S3Backup.AmazonS3Functionality
                     _log.PutError($"Error deleting item {deleteError.Key} Code - {deleteError.Code} Message - {deleteError.Message}");
                 }
             }
-            catch (Exception exception)
+            catch (AmazonS3Exception exception)
             {
                 _log.PutError($"Exception occurred: {exception.Message}");
             }
@@ -83,7 +85,7 @@ namespace S3Backup.AmazonS3Functionality
                 _log.PutError($"Exception occurred: {exception.Message}");
                 throw;
             }
-            catch (Exception exception)
+            catch (AmazonS3Exception exception)
             {
                 _log.PutError($"Exception occurred: {exception.Message}");
             }
