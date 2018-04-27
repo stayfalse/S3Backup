@@ -4,10 +4,8 @@ namespace S3Backup
 {
     public sealed class RemotePath : AddressesOption<RemotePath>
     {
-        public const int MaxLength = 100;
-
         public RemotePath(string value)
-             : base(value, (string path) => true, maxLength: MaxLength)
+             : base(value, (string path) => System.Text.Encoding.UTF8.GetByteCount(path) <= 1024)
         {
         }
     }

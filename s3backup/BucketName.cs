@@ -10,8 +10,18 @@ namespace S3Backup
         public const int MinLength = 3;
 
         public BucketName(string value)
-             : base(value, (string name) => (System.Uri.CheckHostName(name) == System.UriHostNameType.Dns && !name.Any((char c) => char.IsUpper(c) || c == '_')), MinLength, MaxLength)
+             : base(value, (string name) => Validate(name))
         {
+        }
+
+        private static bool Validate(string name)
+        {
+            if (!(name.Length < MinLength || name.Length > MaxLength))
+            {
+                return System.Uri.CheckHostName(name) == System.UriHostNameType.Dns && !name.Any((char c) => char.IsUpper(c) || c == '_');
+            }
+
+            return false;
         }
     }
 }

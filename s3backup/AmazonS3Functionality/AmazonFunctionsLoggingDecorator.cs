@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -26,7 +27,7 @@ namespace S3Backup.AmazonS3Functionality
             }
 
             var objectsList = await _inner.GetObjectsList(prefix).ConfigureAwait(false);
-            _log.PutOut($"S3Objects list received. (RemotePath: {prefix})");
+            _log.PutOut($"S3Objects list received. (RemotePath: {prefix.ToString(CultureInfo.InvariantCulture)})");
             return objectsList;
         }
 
