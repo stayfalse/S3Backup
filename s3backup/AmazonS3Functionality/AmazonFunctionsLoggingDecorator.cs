@@ -31,15 +31,20 @@ namespace S3Backup.AmazonS3Functionality
             return objectsList;
         }
 
-        public async Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
+        public async Task UploadObjectToBucket(FileInfo fileInfo, ObjectKeyCreator keyCreator, PartSize partSize)
         {
             if (fileInfo is null)
             {
                 throw new ArgumentNullException(nameof(fileInfo));
             }
 
-            _log.PutOut($"Upload {fileInfo.Name} to bucket started.");
-            await _inner.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
+            if (keyCreator is null)
+            {
+                throw new ArgumentNullException(nameof(keyCreator));
+            }
+
+            _log.PutOut($"Upload {keyCreator(fileInfo.FullName)} to bucket started.");
+            await _inner.UploadObjectToBucket(fileInfo, keyCreator, partSize).ConfigureAwait(false);
             _log.PutOut($"Uploaded");
         }
 

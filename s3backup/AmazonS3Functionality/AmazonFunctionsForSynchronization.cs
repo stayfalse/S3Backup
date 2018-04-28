@@ -26,9 +26,9 @@ namespace S3Backup.AmazonS3Functionality
             await _dryRun.TryDeleteObject(objectKey).ConfigureAwait(false);
         }
 
-        public async Task UploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
+        public async Task UploadObjects(IEnumerable<FileInfo> filesInfo, ObjectKeyCreator keyCreator, PartSize partSize)
         {
-            await _dryRun.TryUploadObjects(filesInfo, localPath, partSize).ConfigureAwait(false);
+            await _dryRun.TryUploadObjects(filesInfo, keyCreator, partSize).ConfigureAwait(false);
         }
 
         public async Task Purge(RemotePath prefix)
@@ -36,9 +36,9 @@ namespace S3Backup.AmazonS3Functionality
             await _dryRun.TryPurge(prefix).ConfigureAwait(false);
         }
 
-        public async Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
+        public async Task UploadObjectToBucket(FileInfo fileInfo, ObjectKeyCreator keyCreator, PartSize partSize)
         {
-            await _dryRun.TryUploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
+            await _dryRun.TryUploadObjectToBucket(fileInfo, keyCreator, partSize).ConfigureAwait(false);
         }
     }
 }

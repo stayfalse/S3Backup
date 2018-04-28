@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -45,7 +46,7 @@ namespace S3Backup.SynchronizationImplementation
             var filesInfo = new Dictionary<string, FileInfo>();
             foreach (var fileInfo in files)
             {
-                filesInfo.Add(fileInfo.FullName.Remove(0, Path.GetFullPath(_options.LocalPath).Length + 1).Replace('\\', '/'), fileInfo);
+                filesInfo.Add(GetObjectKey(fileInfo.FullName), fileInfo);
             }
 
             return filesInfo;
@@ -82,7 +83,7 @@ namespace S3Backup.SynchronizationImplementation
         public async Task UploadMismatchedFile(FileInfo fileInfo)
         {
             await _amazonFunctions
-                           .UploadObjectToBucket(fileInfo, _options.LocalPath, _options.PartSize)
+                           .UploadObjectToBucket(fileInfo, (string filePath) => GetObjectKey(filePath), _options.PartSize)
                            .ConfigureAwait(false);
         }
 
@@ -96,9 +97,14 @@ namespace S3Backup.SynchronizationImplementation
             if (filesInfo.Count > 0)
             {
                 await _amazonFunctions
-                  .UploadObjects(filesInfo, _options.LocalPath, _options.PartSize)
+                  .UploadObjects(filesInfo, (string filePath) => GetObjectKey(filePath), _options.PartSize)
                   .ConfigureAwait(false);
             }
+        }
+
+        private string GetObjectKey(string filePath)
+        {
+            return $"{_options.RemotePath.ToString(CultureInfo.InvariantCulture)}{filePath.Remove(0, Path.GetFullPath(_options.LocalPath).Length + 1).Replace('\\', '/')}";
         }
     }
 }

@@ -8,7 +8,7 @@ namespace S3Backup.AmazonS3Functionality
     {
         Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix);
 
-        Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize);
+        Task UploadObjectToBucket(FileInfo fileInfo, ObjectKeyCreator keyCreator, PartSize partSize);
 
         Task DeleteObject(string objectKey);
 

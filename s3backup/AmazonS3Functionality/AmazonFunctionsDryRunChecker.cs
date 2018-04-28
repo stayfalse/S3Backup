@@ -21,26 +21,26 @@ namespace S3Backup.AmazonS3Functionality
             _dryRun = optionsSource.AmazonOptions.DryRun;
         }
 
-        public async Task<bool> TryUploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
+        public async Task<bool> TryUploadObjectToBucket(FileInfo fileInfo, ObjectKeyCreator keyCreator, PartSize partSize)
         {
             if (!_dryRun)
             {
                 await _amazonFunctions
-                    .UploadObjectToBucket(fileInfo, localPath, partSize)
+                    .UploadObjectToBucket(fileInfo, keyCreator, partSize)
                     .ConfigureAwait(false);
             }
 
             return !_dryRun;
         }
 
-        public async Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
+        public async Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, ObjectKeyCreator keyCreator, PartSize partSize)
         {
             if (!_dryRun)
             {
                 foreach (var fileInfo in filesInfo)
                 {
                     await _amazonFunctions
-                        .UploadObjectToBucket(fileInfo, localPath, partSize)
+                        .UploadObjectToBucket(fileInfo, keyCreator, partSize)
                         .ConfigureAwait(false);
                 }
             }

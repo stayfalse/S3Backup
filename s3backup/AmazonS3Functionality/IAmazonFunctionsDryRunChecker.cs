@@ -8,10 +8,10 @@ namespace S3Backup.AmazonS3Functionality
     {
         Task<bool> TryDeleteObject(string objectKey);
 
-        Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize);
+        Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, ObjectKeyCreator keyCreator, PartSize partSize);
 
         Task<bool> TryPurge(RemotePath prefix);
 
-        Task<bool> TryUploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize);
+        Task<bool> TryUploadObjectToBucket(FileInfo fileInfo, ObjectKeyCreator keyCreator, PartSize partSize);
     }
 }

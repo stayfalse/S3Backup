@@ -9,6 +9,8 @@ using Amazon.S3.Util;
 
 namespace S3Backup.AmazonS3Functionality
 {
+    public delegate string ObjectKeyCreator(string filePath);
+
     internal sealed class UseAmazon : IAmazonFunctions
     {
         private readonly BucketName _bucketName;
@@ -49,16 +51,16 @@ namespace S3Backup.AmazonS3Functionality
             return list.AsReadOnly();
         }
 
-        public async Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
+        public async Task UploadObjectToBucket(FileInfo fileInfo, ObjectKeyCreator keyCreator, PartSize partSize)
         {
             if (fileInfo is null)
             {
                 throw new ArgumentNullException(nameof(fileInfo));
             }
 
-            if (localPath is null)
+            if (keyCreator is null)
             {
-                throw new ArgumentNullException(nameof(localPath));
+                throw new ArgumentNullException(nameof(keyCreator));
             }
 
             if (partSize is null)
@@ -68,9 +70,7 @@ namespace S3Backup.AmazonS3Functionality
 
             await Initialize().ConfigureAwait(false);
 
-            var objectKey = fileInfo.FullName
-                .Remove(0, Path.GetFullPath(localPath).Length + 1)
-                .Replace('\\', '/');
+            var objectKey = keyCreator(fileInfo.FullName);
             if (fileInfo.Length <= partSize)
             {
                 var putObjectRequest = new PutObjectRequest

@@ -74,11 +74,11 @@ namespace S3Backup.AmazonS3Functionality
             }
         }
 
-        public async Task UploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
+        public async Task UploadObjectToBucket(FileInfo fileInfo, ObjectKeyCreator keyCreator, PartSize partSize)
         {
             try
             {
-                await _inner.UploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false);
+                await _inner.UploadObjectToBucket(fileInfo, keyCreator, partSize).ConfigureAwait(false);
             }
             catch (ArgumentNullException exception)
             {

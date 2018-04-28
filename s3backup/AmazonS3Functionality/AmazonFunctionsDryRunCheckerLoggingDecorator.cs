@@ -18,7 +18,7 @@ namespace S3Backup.AmazonS3Functionality
             _log = log ?? throw new ArgumentNullException(nameof(log));
         }
 
-        public async Task<bool> TryUploadObjectToBucket(FileInfo fileInfo, LocalPath localPath, PartSize partSize)
+        public async Task<bool> TryUploadObjectToBucket(FileInfo fileInfo, ObjectKeyCreator keyCreator, PartSize partSize)
         {
             if (fileInfo is null)
             {
@@ -26,7 +26,7 @@ namespace S3Backup.AmazonS3Functionality
             }
 
             _log.PutOut($"Try upload {fileInfo.Name} to bucket.");
-            if (!await _inner.TryUploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false))
+            if (!await _inner.TryUploadObjectToBucket(fileInfo, keyCreator, partSize).ConfigureAwait(false))
             {
                 _log.PutOut($"{fileInfo.Name} upload skipped.");
                 return false;
@@ -35,12 +35,12 @@ namespace S3Backup.AmazonS3Functionality
             return true;
         }
 
-        public async Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, LocalPath localPath, PartSize partSize)
+        public async Task<bool> TryUploadObjects(IEnumerable<FileInfo> filesInfo, ObjectKeyCreator keyCreator, PartSize partSize)
         {
             _log.PutOut($"Try upload multiple objects.");
             foreach (var fileInfo in filesInfo)
             {
-                if (!await _inner.TryUploadObjectToBucket(fileInfo, localPath, partSize).ConfigureAwait(false))
+                if (!await _inner.TryUploadObjectToBucket(fileInfo, keyCreator, partSize).ConfigureAwait(false))
                 {
                     _log.PutOut($"Multiple upload skipped.");
                     return false;
