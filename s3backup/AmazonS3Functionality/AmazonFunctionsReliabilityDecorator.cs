@@ -66,8 +66,7 @@ namespace S3Backup.AmazonS3Functionality
         private static async Task Retry(Task task, Exception innerException)
         {
             var retryInterval = StartInterval;
-            var watch = new Stopwatch();
-            watch.Start();
+            var watch = Stopwatch.StartNew();
             while (retryInterval <= IntervalThreshold)
             {
                 await Task.Delay(retryInterval).ConfigureAwait(false);
@@ -84,7 +83,6 @@ namespace S3Backup.AmazonS3Functionality
 
                 if (watch.ElapsedMilliseconds + retryInterval >= Timeout)
                 {
-                    watch.Stop();
                     break;
                 }
             }
