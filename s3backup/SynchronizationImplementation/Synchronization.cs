@@ -22,7 +22,7 @@ namespace S3Backup.SynchronizationImplementation
             {
                 if (filesInfo.TryGetValue(s3Object.Key, out var fileInfo))
                 {
-                    filesInfo.Remove(fileInfo.Name);
+                    filesInfo.Remove(s3Object.Key);
                     if (!_synchronizationFunctions.FileEqualsObject(fileInfo, s3Object))
                     {
                         await _synchronizationFunctions.UploadMismatchedFile(fileInfo).ConfigureAwait(false);
