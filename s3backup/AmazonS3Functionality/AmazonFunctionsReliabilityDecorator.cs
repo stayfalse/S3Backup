@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 
 using Amazon.S3;
@@ -62,29 +63,7 @@ namespace S3Backup.AmazonS3Functionality
             await CommonExceptionHandler(_inner.UploadObjectToBucket(fileInfo, keyCreator, partSize)).ConfigureAwait(false);
         }
 
-        private async Task CommonExceptionHandler(Task task)
-        {
-            try
-            {
-                await task.ConfigureAwait(false);
-            }
-            catch (AmazonS3Exception exception)
-            when (string.Equals(exception.ErrorCode, "InternalError", StringComparison.Ordinal))
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-                await Retry(task, exception).ConfigureAwait(false);
-            }
-            catch (DeleteObjectsException)
-            {
-                throw;
-            }
-            catch (AmazonS3Exception exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-            }
-        }
-
-        private async Task Retry(Task task, Exception innerException)
+        private static async Task Retry(Task task, Exception innerException)
         {
             var retryInterval = StartInterval;
             var watch = new Stopwatch();
@@ -108,6 +87,38 @@ namespace S3Backup.AmazonS3Functionality
                     watch.Stop();
                     break;
                 }
+            }
+        }
+
+        private async Task CommonExceptionHandler(Task task)
+        {
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (WebException exception)
+            when ((exception.Status == WebExceptionStatus.ConnectFailure) || (exception.Status == WebExceptionStatus.SendFailure))
+            {
+                _log.PutError($"Exception occurred: {exception.Message}");
+                await Retry(task, exception).ConfigureAwait(false);
+            }
+            catch (WebException exception)
+            {
+                _log.PutError($"Exception occurred: {exception.Message}");
+            }
+            catch (AmazonS3Exception exception)
+            when (string.Equals(exception.ErrorCode, "InternalError", StringComparison.Ordinal))
+            {
+                _log.PutError($"Exception occurred: {exception.Message}");
+                await Retry(task, exception).ConfigureAwait(false);
+            }
+            catch (DeleteObjectsException)
+            {
+                throw;
+            }
+            catch (AmazonS3Exception exception)
+            {
+                _log.PutError($"Exception occurred: {exception.Message}");
             }
         }
     }
