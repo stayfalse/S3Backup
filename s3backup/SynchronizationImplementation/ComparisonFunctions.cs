@@ -30,7 +30,7 @@ namespace S3Backup.SynchronizationImplementation
                 throw new ArgumentNullException(nameof(s3Object));
             }
 
-            return string.Equals(s3Object.ETag, ComputeLocalETag(fileInfo, partSize), StringComparison.Ordinal);
+            return s3Object.ETag == ComputeLocalETag(fileInfo, partSize);
         }
 
         private static string ComputeLocalETag(FileInfo fileInfo, PartSize partSize)

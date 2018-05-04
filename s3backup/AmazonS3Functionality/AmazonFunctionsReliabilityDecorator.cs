@@ -76,7 +76,7 @@ namespace S3Backup.AmazonS3Functionality
                     break;
                 }
                 catch (Exception exception)
-                when (string.Equals(exception.Message, innerException.Message, StringComparison.Ordinal))
+                when (exception.Message == innerException.Message)
                 {
                     retryInterval = (retryInterval == IntervalThreshold) ? retryInterval : retryInterval * 2;
                 }
@@ -105,7 +105,7 @@ namespace S3Backup.AmazonS3Functionality
                 _log.PutError($"Exception occurred: {exception.Message}");
             }
             catch (AmazonS3Exception exception)
-            when (string.Equals(exception.ErrorCode, "InternalError", StringComparison.Ordinal))
+            when (exception.ErrorCode == "InternalError")
             {
                 _log.PutError($"Exception occurred: {exception.Message}");
                 await Retry(task, exception).ConfigureAwait(false);
