@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -11,6 +12,9 @@ namespace S3Backup.AmazonS3Functionality
 {
     public class AmazonFunctionsReliabilityDecorator : IAmazonFunctions
     {
+        private const int IntervalThreshold = 16384;
+        private const int StartInterval = 128;
+        private const int Timeout = 120000;
         private readonly IAmazonFunctions _inner;
         private readonly ILog<IAmazonFunctions> _log;
 
@@ -22,19 +26,7 @@ namespace S3Backup.AmazonS3Functionality
 
         public async Task DeleteObject(string objectKey)
         {
-            try
-            {
-                await _inner.DeleteObject(objectKey).ConfigureAwait(false);
-            }
-            catch (ArgumentNullException exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-                throw;
-            }
-            catch (AmazonS3Exception exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-            }
+            await CommonExceptionHandler(_inner.DeleteObject(objectKey)).ConfigureAwait(false);
         }
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
@@ -46,12 +38,7 @@ namespace S3Backup.AmazonS3Functionality
         {
             try
             {
-                await _inner.Purge(prefix).ConfigureAwait(false);
-            }
-            catch (ArgumentNullException exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-                throw;
+                await CommonExceptionHandler(_inner.Purge(prefix)).ConfigureAwait(false);
             }
             catch (DeleteObjectsException exception)
             {
@@ -68,26 +55,59 @@ namespace S3Backup.AmazonS3Functionality
                     _log.PutError($"Error deleting item {deleteError.Key} Code - {deleteError.Code} Message - {deleteError.Message}");
                 }
             }
+        }
+
+        public async Task UploadObjectToBucket(FileInfo fileInfo, ObjectKeyCreator keyCreator, PartSize partSize)
+        {
+            await CommonExceptionHandler(_inner.UploadObjectToBucket(fileInfo, keyCreator, partSize)).ConfigureAwait(false);
+        }
+
+        private async Task CommonExceptionHandler(Task task)
+        {
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (AmazonS3Exception exception)
+            when (string.Equals(exception.ErrorCode, "InternalError", StringComparison.Ordinal))
+            {
+                _log.PutError($"Exception occurred: {exception.Message}");
+                await Retry(task, exception).ConfigureAwait(false);
+            }
+            catch (DeleteObjectsException)
+            {
+                throw;
+            }
             catch (AmazonS3Exception exception)
             {
                 _log.PutError($"Exception occurred: {exception.Message}");
             }
         }
 
-        public async Task UploadObjectToBucket(FileInfo fileInfo, ObjectKeyCreator keyCreator, PartSize partSize)
+        private async Task Retry(Task task, Exception innerException)
         {
-            try
+            var retryInterval = StartInterval;
+            var watch = new Stopwatch();
+            watch.Start();
+            while (retryInterval <= IntervalThreshold)
             {
-                await _inner.UploadObjectToBucket(fileInfo, keyCreator, partSize).ConfigureAwait(false);
-            }
-            catch (ArgumentNullException exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-                throw;
-            }
-            catch (AmazonS3Exception exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
+                await Task.Delay(retryInterval).ConfigureAwait(false);
+                try
+                {
+                    await task.ConfigureAwait(false);
+                    break;
+                }
+                catch (Exception exception)
+                when (string.Equals(exception.Message, innerException.Message, StringComparison.Ordinal))
+                {
+                    retryInterval = (retryInterval == IntervalThreshold) ? retryInterval : retryInterval * 2;
+                }
+
+                if (watch.ElapsedMilliseconds + retryInterval >= Timeout)
+                {
+                    watch.Stop();
+                    break;
+                }
             }
         }
     }
