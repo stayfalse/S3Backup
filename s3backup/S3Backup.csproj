@@ -10,14 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="3.3.17.2" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.18.2" />
     <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.1.0-preview1-final" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.1.0-preview1-final" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.0-preview1-final" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.1" />
     <PackageReference Include="AsyncUsageAnalyzers" Version="1.0.0-alpha003" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.0" />
-    <PackageReference Include="SimpleInjector" Version="4.1.0" />
+    <PackageReference Include="SimpleInjector" Version="4.2.2" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta006" />
     <AdditionalFiles Include="..\shared\stylecop.json" />
   </ItemGroup>
