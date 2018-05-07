@@ -42,7 +42,7 @@ namespace S3Backup.Composition
         public (Options, AmazonOptions, LogOptions) Parse(string[] args)
         {
             var app = new CommandLineApplication { Name = "S3Backup" };
-            app.HelpOption("-?|-h|--help");
+            var help = app.HelpOption("-?|-h|--help");
 
             var localPath = app.Option("-l  | --local", "Set Local Path (required parameter)", CommandOptionType.SingleValue);
             var bucketName = app.Option("-b  | --bucket", "Set Bucket Name (required parameter)", CommandOptionType.SingleValue);
@@ -63,43 +63,36 @@ namespace S3Backup.Composition
             app.Execute(args);
 
             var optionCases = OptionCases.None;
-            try
+
+            if (!localPath.HasValue() || !bucketName.HasValue() || !remotePath.HasValue())
             {
-                if (!localPath.HasValue() || !bucketName.HasValue() || !remotePath.HasValue())
+                throw new IllegalArgumentException($"Command line argument is missing (one or several required parameters).");
+            }
+            else
+            {
+                _recycleAge = ParseArg(recycleAge);
+                _parallelParts = ParseArg(parallelParts);
+                _partSize = ParseArg(partSize);
+
+                LocalPath = new LocalPath(localPath.Value());
+                BucketName = new BucketName(bucketName.Value());
+                RemotePath = new RemotePath(remotePath.Value());
+                ConfigFile = configFile.Value();
+                _logFile = logFilePath.Value();
+
+                if (sizeOnly.HasValue())
                 {
-                    throw new IllegalArgumentException($"Command line argument is missing (one or several required parameters).");
-                }
-                else
-                {
-                    _recycleAge = ParseArg(recycleAge);
-                    _parallelParts = ParseArg(parallelParts);
-                    _partSize = ParseArg(partSize);
-
-                    LocalPath = new LocalPath(localPath.Value());
-                    BucketName = new BucketName(bucketName.Value());
-                    RemotePath = new RemotePath(remotePath.Value());
-                    ConfigFile = configFile.Value();
-                    _logFile = logFilePath.Value();
-
-                    if (sizeOnly.HasValue())
-                    {
-                        optionCases = optionCases | OptionCases.SizeOnly;
-                    }
-
-                    if (purge.HasValue())
-                    {
-                        optionCases = optionCases | OptionCases.Purge;
-                    }
+                    optionCases = optionCases | OptionCases.SizeOnly;
                 }
 
-                return (new Options(optionCases, LocalPath, RemotePath, PartSize, Threshold),
-                    new AmazonOptions(ClientInformation, BucketName, ParallelParts, dryRun.HasValue()), new LogOptions(LogFilePath, verbose.HasValue()));
+                if (purge.HasValue())
+                {
+                    optionCases = optionCases | OptionCases.Purge;
+                }
             }
-            catch (IllegalArgumentException)
-            {
-                app.ShowHelp();
-                throw;
-            }
+
+            return (new Options(optionCases, LocalPath, RemotePath, PartSize, Threshold),
+                new AmazonOptions(ClientInformation, BucketName, ParallelParts, dryRun.HasValue()), new LogOptions(LogFilePath, verbose.HasValue()));
         }
 
         private static int ParseArg(CommandOption commandOption)
