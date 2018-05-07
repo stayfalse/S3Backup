@@ -32,7 +32,7 @@ namespace S3Backup.AmazonS3Functionality
 
         public async Task<IEnumerable<S3ObjectInfo>> GetObjectsList(RemotePath prefix)
         {
-            return await _inner.GetObjectsList(prefix).ConfigureAwait(false);
+            return await CommonExceptionHandler(_inner.GetObjectsList(prefix)).ConfigureAwait(false);
         }
 
         public async Task Purge(RemotePath prefix)
@@ -109,6 +109,38 @@ namespace S3Backup.AmazonS3Functionality
                     break;
                 }
             }
+        }
+
+        private async Task<IEnumerable<S3ObjectInfo>> CommonExceptionHandler(Task<IEnumerable<S3ObjectInfo>> task)
+        {
+            var retryInterval = StartInterval;
+            var watch = Stopwatch.StartNew();
+            while (watch.ElapsedMilliseconds + retryInterval < Timeout)
+            {
+                Exception repeatableException = null;
+                try
+                {
+                    return await task.ConfigureAwait(false);
+                }
+                catch (WebException exception)
+                when ((exception.Status == WebExceptionStatus.ConnectFailure)
+                || (exception.Status == WebExceptionStatus.SendFailure)
+                || (exception.Status == WebExceptionStatus.ReceiveFailure))
+                {
+                    repeatableException = exception;
+                }
+                catch (AmazonS3Exception exception)
+                when (exception.ErrorCode == "InternalError")
+                {
+                    repeatableException = exception;
+                }
+
+                _log.PutError($"Exception occurred: {repeatableException.Message}");
+                await Task.Delay(retryInterval).ConfigureAwait(false);
+                retryInterval = (retryInterval == IntervalThreshold) ? retryInterval : retryInterval * 2;
+            }
+
+            throw new TimeoutException();
         }
     }
 }
