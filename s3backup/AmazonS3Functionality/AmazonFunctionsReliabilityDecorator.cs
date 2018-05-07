@@ -63,60 +63,51 @@ namespace S3Backup.AmazonS3Functionality
             await CommonExceptionHandler(_inner.UploadObjectToBucket(fileInfo, keyCreator, partSize)).ConfigureAwait(false);
         }
 
-        private static async Task Retry(Task task, Exception innerException)
+        private async Task CommonExceptionHandler(Task task)
         {
             var retryInterval = StartInterval;
             var watch = Stopwatch.StartNew();
-            while (retryInterval <= IntervalThreshold)
+            while (watch.ElapsedMilliseconds + retryInterval < Timeout)
             {
-                await Task.Delay(retryInterval).ConfigureAwait(false);
+                Exception repeatableException = null;
                 try
                 {
                     await task.ConfigureAwait(false);
                     break;
                 }
-                catch (Exception exception)
-                when (exception.Message == innerException.Message)
+                catch (WebException exception)
+                when ((exception.Status == WebExceptionStatus.ConnectFailure) || (exception.Status == WebExceptionStatus.SendFailure))
                 {
-                    retryInterval = (retryInterval == IntervalThreshold) ? retryInterval : retryInterval * 2;
+                    repeatableException = exception;
+                }
+                catch (WebException exception)
+                {
+                    _log.PutError($"Exception occurred: {exception.Message}");
+                }
+                catch (AmazonS3Exception exception)
+                when (exception.ErrorCode == "InternalError")
+                {
+                    repeatableException = exception;
+                }
+                catch (DeleteObjectsException)
+                {
+                    throw;
+                }
+                catch (AmazonS3Exception exception)
+                {
+                    _log.PutError($"Exception occurred: {exception.Message}");
                 }
 
-                if (watch.ElapsedMilliseconds + retryInterval >= Timeout)
+                if (repeatableException != null)
+                {
+                    _log.PutError($"Exception occurred: {repeatableException.Message}");
+                    await Task.Delay(retryInterval).ConfigureAwait(false);
+                    retryInterval = (retryInterval == IntervalThreshold) ? retryInterval : retryInterval * 2;
+                }
+                else
                 {
                     break;
                 }
-            }
-        }
-
-        private async Task CommonExceptionHandler(Task task)
-        {
-            try
-            {
-                await task.ConfigureAwait(false);
-            }
-            catch (WebException exception)
-            when ((exception.Status == WebExceptionStatus.ConnectFailure) || (exception.Status == WebExceptionStatus.SendFailure))
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-                await Retry(task, exception).ConfigureAwait(false);
-            }
-            catch (WebException exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-            }
-            catch (AmazonS3Exception exception)
-            when (exception.ErrorCode == "InternalError")
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
-                await Retry(task, exception).ConfigureAwait(false);
-            }
-            catch (DeleteObjectsException)
-            {
-                throw;
-            }
-            catch (AmazonS3Exception exception)
-            {
-                _log.PutError($"Exception occurred: {exception.Message}");
             }
         }
     }
