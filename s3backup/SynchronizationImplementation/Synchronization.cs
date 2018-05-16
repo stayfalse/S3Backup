@@ -16,9 +16,8 @@ namespace S3Backup.SynchronizationImplementation
         {
             await _synchronizationFunctions.Purge().ConfigureAwait(false);
 
-            var objects = await _synchronizationFunctions.GetObjectsList().ConfigureAwait(false);
             var filesInfo = _synchronizationFunctions.GetFilesDictionary();
-            foreach (var s3Object in objects)
+            foreach (var s3Object in await _synchronizationFunctions.GetObjectsList().ConfigureAwait(false))
             {
                 if (filesInfo.TryGetValue(s3Object.Key, out var fileInfo))
                 {

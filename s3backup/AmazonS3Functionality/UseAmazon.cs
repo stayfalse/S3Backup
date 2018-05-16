@@ -148,7 +148,7 @@ namespace S3Backup.AmazonS3Functionality
             }
         }
 
-        private async Task<List<S3Object>> GetS3ObjectsList(RemotePath prefix)
+        private async Task<IEnumerable<S3Object>> GetS3ObjectsList(RemotePath prefix)
         {
             if (prefix is null)
             {
@@ -156,14 +156,23 @@ namespace S3Backup.AmazonS3Functionality
             }
 
             await Initialize().ConfigureAwait(false);
-            var request = new ListObjectsRequest
+
+            var listRequest = new ListObjectsRequest
             {
                 BucketName = _bucketName,
                 Prefix = prefix,
             };
+            ListObjectsResponse listResponse;
+            var list = new List<S3Object>();
+            do
+            {
+               listResponse = await Client.ListObjectsAsync(listRequest).ConfigureAwait(false);
+               list.AddRange(listResponse.S3Objects);
+               listRequest.Marker = listResponse.NextMarker;
+            }
+            while (!listResponse.IsTruncated);
 
-            var objects = (await Client.ListObjectsAsync(request).ConfigureAwait(false)).S3Objects;
-            return objects;
+            return list.AsReadOnly();
         }
 
         private async Task MultipartUploadObject(FileInfo fileInfo, string objectKey, PartSize partSize)
