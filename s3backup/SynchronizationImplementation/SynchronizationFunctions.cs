@@ -41,10 +41,8 @@ namespace S3Backup.SynchronizationImplementation
 
         public Dictionary<string, FileInfo> GetFilesDictionary()
         {
-            var files = new DirectoryInfo(_options.LocalPath)
-                .GetFiles("*", SearchOption.AllDirectories);
             var filesInfo = new Dictionary<string, FileInfo>();
-            foreach (var fileInfo in files)
+            foreach (var fileInfo in new DirectoryInfo(_options.LocalPath).EnumerateFiles("*", SearchOption.AllDirectories))
             {
                 filesInfo.Add(GetObjectKey(fileInfo.FullName), fileInfo);
             }
